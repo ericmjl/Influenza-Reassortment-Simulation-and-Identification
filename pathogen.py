@@ -1,5 +1,6 @@
 from generate_id import generate_id
-from copy import copy
+from copy import copy, deepcopy
+from random import choice
 
 class Pathogen(object):
 	"""The Pathogen class models a generic pathogen."""
@@ -43,21 +44,31 @@ class Pathogen(object):
 			"""
 			This method takes in another pathogen and returns a progeny with 
 			genomic segments that are a combination of segments from both
-			pathogens.
+			pathogens. Reassortment with another pathogen is akin to 
+			replication, but the step at which segments are added is different.
 
 			INPUTS:
 			-	OBJECT: other_pathogen
 					The other pathogen with which to reassort.
 			-	INT: current_time
 					The time at which the reassortment event happened.
+
+			OUTPUTS:
+			-	OBJECT: new_pathogen
+					The reassortant progeny from the two viruses.
 			"""
 
 			new_pathogen = copy(self)
 			new_pathogen.parent = (self, other_pathogen)
 			new_pathogen.creation_time = current_time
 			new_pathogen.id = generate_id()
-			new_pathogen.segments = None
-			
+			new_pathogen.segments = []
+			for segment in zip(self.segments, other_pathogen.segments):
+				segment_chosen = choice(segment)
+				new_pathogen.segments.append(deepcopy(segment_chosen))
+			new_pathogen.mutate()
+
+			return new_pathogen
 
 
 		def replicate(self, current_time):
