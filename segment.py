@@ -43,7 +43,8 @@ class Segment(object):
 		self.substitution_rate = substitution_rate
 
 	def __repr__(self):
-		return 'Segment %s' % self.segment_number
+		return 'Segment %s, sequence %s' % (self.segment_number, \
+			self.seed_sequence)
 
 	def compute_sequence(self):
 		"""

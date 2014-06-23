@@ -4,6 +4,7 @@ Affiliation: Massachusetts Institute of Technology
 """
 
 from random import choice
+from generate_id import generate_id
 
 class Sequence(object):
 	"""
@@ -18,7 +19,7 @@ class Sequence(object):
 	for each of its segments; rather, each segment only keeps track of the 
 	mutations that have happened.
 	"""
-	def __init__(self, length=1000, sequence=None):
+	def __init__(self, length=1000, sequence=None, id=None):
 		"""
 		Initialize the sequence with a random sequence of length 1000 if 
 		sequence is not specified.
@@ -34,8 +35,13 @@ class Sequence(object):
 		else:
 			self.sequence = Sequence
 
+		if id == None:
+			self.id = generate_id()
+		else:
+			self.id = id
+
 	def __repr__(self):
-		return self.sequence
+		return self.id
 		
 	def generate_sequence(self, length):
 		"""
