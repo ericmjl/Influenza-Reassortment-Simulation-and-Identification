@@ -1,3 +1,8 @@
+"""
+Author: Eric J. Ma
+Affiliation: Massachusetts Institute of Technology
+"""
+
 from generate_id import generate_id
 from copy import copy, deepcopy
 from random import choice

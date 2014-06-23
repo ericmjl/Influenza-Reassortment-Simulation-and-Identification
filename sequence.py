@@ -20,7 +20,7 @@ class Sequence(object):
 	"""
 	def __init__(self, length=1000, sequence=None):
 		"""
-		Initialize the sequence with a random sequence of length 10 if 
+		Initialize the sequence with a random sequence of length 1000 if 
 		sequence is not specified.
 
 		Otherwise, initialize sequence with a sequence that is specified. 
@@ -32,8 +32,7 @@ class Sequence(object):
 		if sequence == None:
 			self.sequence = self.generate_sequence(length)
 		else:
-			self.sequence = None
-			self.set_sequence(sequence)
+			self.sequence = Sequence
 
 	def __repr__(self):
 		return self.sequence
@@ -48,12 +47,3 @@ class Sequence(object):
 			letter = choice(['A', 'T', 'G', 'C'])
 			sequence += letter
 		return sequence
-
-	def set_sequence(self, sequence):
-		"""Setter method for a segment's sequence."""
-
-		if isinstance(seuqence, str):
-			self.sequence = sequence
-		else:
-			raise TypeError('A string must be specified!')
-
