@@ -1,12 +1,17 @@
+"""
+Author: Eric J. Ma
+Affiliation: Massachusetts Institute of Technology
+"""
+
 from random import choice
 
 class Sequence(object):
 	"""
-	The Sequence object is the lowest level object in the viral simulator. 
-	It provides a container for storing seed sequences for the viruses present
+	The Sequence object is the lowest level object in the pathogen simulator. 
+	It provides a container for storing seed sequences for the pathogens present
 	in the environment. 
 
-	This can be subclassed to store seed sequences for other viruses, rather 
+	This can be subclassed to store seed sequences for other pathogens, rather 
 	than using a generated sequence. 
 
 	Note that when a virus replicates, the full sequence object is not copied 
