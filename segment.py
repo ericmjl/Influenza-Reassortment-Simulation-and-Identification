@@ -69,7 +69,7 @@ class Segment(object):
 		segment's mutation dictionary.
 		"""
 		n = self.length
-		p = float(self.substitution_rate) / 365
+		p = float(self.substitution_rate)
 
 		num_positions = binomial(n,p)
 

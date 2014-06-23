@@ -9,7 +9,8 @@ from random import choice
 
 class Pathogen(object):
 	"""The Pathogen class models a generic pathogen."""
-	def __init__(self, segments, creation_time, parent=None):
+	def __init__(self, segments, creation_time, parent=None, \
+		convenient_id=None):
 		"""
 		Initialize the pathogen.
 
@@ -31,6 +32,15 @@ class Pathogen(object):
 		-	STRING: id
 				a string generated form the generate_id function that uniquely 
 				identifies the pathogen.
+
+		-	INT or STRING: convenient_id
+				a string or an integer that provides a convenient 
+				representation of the virus. This item is not involved in any 
+				computation. 
+
+				It is best practice to keep convenient_id to a short element, 
+				such as a string of less than 5 characters, or an integer of 
+				less than 5 digits in length.
 		"""
 		super(Pathogen, self).__init__()
 
@@ -42,13 +52,18 @@ class Pathogen(object):
 
 		self.id = generate_id()
 
-	def __repr__(self):
-		return str(self.id)
+		self.convenient_id = convenient_id
 
-	def reassort_with(self, other_pathogen, current_time):
+	def __repr__(self):
+		if self.convenient_id == None:
+			return str(self.id)
+		else:
+			return str(self.convenient_id)
+
+	def reassort_with(self, other_pathogen, current_time, convenient_id=None):
 		"""
 		This method takes in another pathogen and returns a progeny with 
-		genomic segments that are a combination of segments from both
+		genomic segments that are randomly selected from segments from both
 		pathogens. Reassortment with another pathogen is akin to 
 		replication, but the step at which segments are added is different.
 
@@ -64,19 +79,28 @@ class Pathogen(object):
 		"""
 
 		new_pathogen = copy(self)
-		new_pathogen.parent = (self, other_pathogen)
 		new_pathogen.creation_time = current_time
 		new_pathogen.id = generate_id()
+		new_pathogen.convenient_id = convenient_id
 		new_pathogen.segments = []
+		
+		parent = set()
 		for segment in zip(self.segments, other_pathogen.segments):
-			segment_chosen = choice(segment)
-			new_pathogen.segments.append(deepcopy(segment_chosen))
+			i = choice([0, 1])
+			new_pathogen.segments.append(deepcopy(segment[i]))
+
+			if i == 0:
+				parent.add(self)
+			elif i == 1:
+				parent.add(other_pathogen)
+		new_pathogen.parent = tuple(parent)
+
 		new_pathogen.mutate()
 
 		return new_pathogen
 
 
-	def replicate(self, current_time):
+	def replicate(self, current_time, convenient_id=None):
 		"""
 		This method replicates the pathogen. Mutation is guaranteed to be 
 		called, but not guaranteed to happen, as it depends on the 
@@ -94,6 +118,7 @@ class Pathogen(object):
 		new_pathogen = copy(self)
 		new_pathogen.parent = self
 		new_pathogen.creation_time = current_time
+		new_pathogen.convenient_id = convenient_id
 		new_pathogen.id = generate_id()
 		new_pathogen.segments = deepcopy(self.segments)
 		new_pathogen.mutate()
@@ -133,3 +158,7 @@ class Pathogen(object):
 			return True
 		else:
 			return False
+
+	def mutations(self):
+		for segment in self.segments:
+			print segment.mutations
