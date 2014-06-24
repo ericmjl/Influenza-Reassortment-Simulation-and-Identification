@@ -6,11 +6,12 @@ Affiliation: Massachusetts Institute of Technology
 from generate_id import generate_id
 from copy import copy, deepcopy
 from random import choice
+from numpy.random import normal
 
 class Pathogen(object):
 	"""The Pathogen class models a generic pathogen."""
-	def __init__(self, segments, creation_time, parent=None, \
-		convenient_id=None):
+	def __init__(self, segments, creation_time, progeny_size, \
+		parent=None, convenient_id=None):
 		"""
 		Initialize the pathogen.
 
@@ -33,6 +34,12 @@ class Pathogen(object):
 				a string generated form the generate_id function that uniquely 
 				identifies the pathogen.
 
+		-	TUPLE: progeny_size
+				a two-tuple that describes the (mean, var) of the burst size 
+				per virus. These are the Normal distribution parameters. In 
+				practice, while a floating point number is drawn from the 
+				Normal distribution, it will be rounded to an integer number.
+
 		-	INT or STRING: convenient_id
 				a string or an integer that provides a convenient 
 				representation of the virus. This item is not involved in any 
@@ -53,6 +60,8 @@ class Pathogen(object):
 		self.id = generate_id()
 
 		self.convenient_id = convenient_id
+
+		self.progeny_size = progeny_size
 
 	def __repr__(self):
 		if self.convenient_id == None:
@@ -99,10 +108,35 @@ class Pathogen(object):
 
 		return new_pathogen
 
+	def generate_progeny(self, current_time):
+		"""
+		This method takes calls on the replicate() function to generate n 
+		progeny, drawn from the Normal distribution.
+
+		INPUTS:
+		-	INT: current_time:
+				This number will be set to the "creation_time" of the new 
+				pathogen, and is passed into the replicate() function.
+
+		OUTPUTS:
+		-	LIST: progeny
+				A list of progeny viruses that can be extended onto a "master 
+				list" of viruses.
+		"""
+		mean = self.progeny_size[0]
+		var = self.progeny_size[1]
+		num_progeny = normal(mean, var)
+
+		progeny = []
+		for i in range(num_progeny):
+			progeny.append(self.replicate(current_time))
+
+		return progeny
+
 
 	def replicate(self, current_time, convenient_id=None):
 		"""
-		This method replicates the pathogen. Mutation is guaranteed to be 
+		This method replicates the pathogen once. Mutation is guaranteed to be 
 		called, but not guaranteed to happen, as it depends on the 
 		substitution rate of each of the genomic segments.
 
