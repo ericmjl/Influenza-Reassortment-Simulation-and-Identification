@@ -11,7 +11,7 @@ from numpy.random import normal
 class Pathogen(object):
 	"""The Pathogen class models a generic pathogen."""
 	def __init__(self, segments, creation_time, progeny_size, \
-		parent=None, convenient_id=None):
+		parent=tuple(), convenient_id=None):
 		"""
 		Initialize the pathogen.
 
@@ -24,11 +24,14 @@ class Pathogen(object):
 				an integer number that specifies the time within the 
 				simulation that the pathogen was created.
 
-		- 	OBJECT: parent
-				a Pathogen object that specifies the parent of the pathogen. 
-				If the pathogen was created ab initio, then the default value 
-				of Parent is None. If the pathogen is reassorted, then parent 
-				is a two-tuple of two Pathogen objects.
+		- 	TUPLE: parent
+				A tuple that specifies the parent of the pathogen. 
+					-	If the tuple is empty, then the pathogen is a seed 
+						pathogen.
+					-	If the tuple has one element, then the pathogen was 
+						replicated from one other pathogen.
+					-	If the tuple has two elements, then the pathogen was a 
+						reassortant of two parental pathogens.
 
 		-	STRING: id
 				a string generated form the generate_id function that uniquely 
@@ -39,15 +42,6 @@ class Pathogen(object):
 				per pathogen. These are the Normal distribution parameters. In 
 				practice, while a floating point number is drawn from the 
 				Normal distribution, it will be rounded to an integer number.
-
-		-	INT or STRING: convenient_id
-				a string or an integer that provides a convenient 
-				representation of the pathogen. This item is not involved in 
-				any computation. 
-
-				It is best practice to keep convenient_id to a short element, 
-				such as a string of less than 5 characters, or an integer of 
-				less than 5 digits in length.
 		"""
 		super(Pathogen, self).__init__()
 
@@ -59,17 +53,21 @@ class Pathogen(object):
 
 		self.id = generate_id()
 
-		self.convenient_id = convenient_id
+		# self.convenient_id = self.id[0:5]
 
 		self.progeny_size = progeny_size
 
 	def __repr__(self):
-		if self.convenient_id == None:
-			return str(self.id)
-		else:
-			return str(self.convenient_id)
+		return self.id[0:5]
+		# Testing if it is better to represent only the first 5 characters of 
+		# self.id
+		# if self.convenient_id == None:
+		# 	return str(self.id)
+		# else:
+		# 	return str(self.convenient_id)
 
-	def reassort_with(self, other_pathogen, current_time, convenient_id=None):
+	def reassort_with(self, other_pathogen, current_time): 
+		#, convenient_id=None):
 		"""
 		This method takes in another pathogen and returns a progeny with 
 		genomic segments that are randomly selected from segments from both
@@ -92,7 +90,7 @@ class Pathogen(object):
 		new_pathogen = copy(self)
 		new_pathogen.creation_time = current_time
 		new_pathogen.id = generate_id()
-		new_pathogen.convenient_id = convenient_id
+		# new_pathogen.convenient_id = new_pathogen.id[0:5]
 		new_pathogen.segments = []
 		
 		parent = set()
@@ -137,7 +135,7 @@ class Pathogen(object):
 		return progeny
 
 
-	def replicate(self, current_time, convenient_id=None):
+	def replicate(self, current_time): #, convenient_id=None):
 		"""
 		This method replicates the pathogen once. Mutation is guaranteed to be 
 		called, but not guaranteed to happen, as it depends on the 
@@ -154,10 +152,10 @@ class Pathogen(object):
 				The replicated pathogen.
 		"""
 		new_pathogen = copy(self)
-		new_pathogen.parent = self
+		new_pathogen.parent = tuple([self])
 		new_pathogen.creation_time = current_time
-		new_pathogen.convenient_id = convenient_id
 		new_pathogen.id = generate_id()
+		# new_pathogen.convenient_id = new_pathogen.id[0:5]
 		new_pathogen.segments = deepcopy(self.segments)
 		new_pathogen.mutate()
 
@@ -180,7 +178,7 @@ class Pathogen(object):
 		a "seed" pathogen. A "seed" pathogen is one that "seeded" the 
 		population of pathogens present in the population.
 		"""
-		if self.parent == None:
+		if len(self.parent) == 0:
 			return True
 		else:
 			return False
