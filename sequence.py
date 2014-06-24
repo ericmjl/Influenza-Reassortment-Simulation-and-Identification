@@ -33,7 +33,7 @@ class Sequence(object):
 		if sequence == None:
 			self.sequence = self.generate_sequence(length)
 		else:
-			self.sequence = Sequence
+			self.sequence = sequence
 
 		if id == None:
 			self.id = generate_id()

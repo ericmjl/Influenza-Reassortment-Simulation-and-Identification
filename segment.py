@@ -53,7 +53,7 @@ class Segment(object):
 		"""
 		sequence = ''
 
-		for i, letter in enumerate(self.seed_sequence.__repr__()):
+		for i, letter in enumerate(self.seed_sequence.sequence):
 			if i in self.mutations.keys():
 				sequence += self.mutations[i]
 			else:

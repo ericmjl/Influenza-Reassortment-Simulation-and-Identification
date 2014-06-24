@@ -3,8 +3,12 @@ Author: Eric J. Ma
 Affiliation: Massachusetts Institute of Technology
 """
 
-from Bio import Seq, SeqRecord, SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+from Bio import SeqIO
 from Bio.Alphabet import IUPAC
+import networkx as nx
+from random import randint
 
 class Simulator(object):
 	"""The Simulator class defines how a simulation run happens."""
@@ -28,10 +32,9 @@ class Simulator(object):
 		self.pathogens = []
 
 	def increment_timestep(self):
+
 		"""
-		This is the customizable part of the simulator. Here, the actions that 
-		take place each timestep are defined. When sub-classed, one can 
-		customize different actions to be run at each time step.
+		This is the customizable part of the simulator.
 		"""
 
 		pass
@@ -86,29 +89,79 @@ class Simulator(object):
 		sequences = []
 
 		for pathogen in self.pathogens:
-			convenient_id = pathogen.convenient_id
-			creation_date = pathogen.creation_date
+			creation_time = pathogen.creation_time
 
 			for segment in pathogen.segments:
 				segment_number = segment.segment_number
 				sequence_string = Seq(segment.compute_sequence())
 
-				sequence = SeqRecord(sequence_string, IUPAC.nucleotide, \
-					id="%s|%s|%s" % (convenient_id, segment_number, \
-						creation_date))
+
+				id_tuple = (pathogen.id, segment_number, creation_time)
+				sequence = SeqRecord(sequence_string, id="%s_%s_%s" % id_tuple)
 
 				sequences.append(sequence)
 
 		if folder_name == None:
-			output_handle = open('%s' % outfile_name)
+			output_handle = open('%s.fasta' % outfile_name, 'w+')
 
 		else:
-			output_handle = open('%s\%s' % (folder_name, outfile_name))
+			output_handle = open('%s/%s.fasta' % (folder_name, outfile_name), \
+				'w+')
 
-		SeqIO.write(output_handle, sequences, 'fasta')
+		SeqIO.write(sequences, output_handle, 'fasta')
 		output_handle.close()
 
-	def write_network(self, outfile_name, folder_name=None):
+	def generate_transmission_graph(self):
+		"""
+		This method creates the ground truth transmission graph in memory.
+
+		NOTE: to draw to screen, call on draw_transmission_graph().
+		"""
+
+		transmission_graph = nx.DiGraph()
+
+		for pathogen in self.pathogens:
+			transmission_graph.add_node(pathogen)
+
+			if len(pathogen.parent) == 0:
+				pass
+			if len(pathogen.parent) == 1:
+				transmission_graph.add_edge(pathogen.parent[0], pathogen, \
+					weight=1.0)
+
+			if len(pathogen.parent) == 2:
+				transmission_graph.add_edge(pathogen.parent[0], pathogen, \
+					weight=0.5)
+				transmission_graph.add_edge(pathogen.parent[1], pathogen, \
+					weight=0.5)
+
+		return transmission_graph
+
+	def draw_transmission_graph(self, positions=False):
+		"""
+		This method draws the transmission graph to the screen using 
+		matplotlib.
+
+		INPUTS:
+		-	BOOLEAN: positions
+				If False: the circular layout will be drawn.
+
+				If True: nodes will be 
+
+		"""
+		transmission_graph = self.generate_transmission_graph()
+
+		if positions == False:
+			nx.draw_circular(transmission_graph)
+
+		if positions == True:
+			positions = dict()
+			for virus in self.pathogens:
+				positions[virus] = (virus.creation_time, randint(0, 20))
+
+			nx.draw(transmission_graph, pos=positions)
+
+	def write_transmission_graph(self, outfile_name, folder_name=None):
 		"""
 		This method writes the ground truth transmission network as a NetworkX 
 		pickle file.
@@ -121,18 +174,13 @@ class Simulator(object):
 				The folder in which the networkX gpickle files are going to be 
 				stored
 		"""
-		transmission_graph = nx.DiGraph()
-
-		for pathogen in pathogens:
-			transmission_graph.add_node(pathogen)
-
-			if virus.parent != Nonte:
-				transmission_graph.add_edge(virus.parent, virus)
+		transmission_graph = self.generate_transmission_graph()
 
 		if folder_name == None:
-			output_handle = open('%s.gpickle' % outfile_name)
+			output_handle = open('%s.gpickle' % outfile_name, 'w+')
 
 		else:
-			output_handle = open('%s\%s.gpickle' % (folder_name, outfile_name))
+			output_handle = open('%s/%s.gpickle' % (folder_name, outfile_name)\
+			 , 'w+')
 
 		nx.write_gpickle(transmission_graph, output_handle)
