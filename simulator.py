@@ -14,15 +14,17 @@ class Simulator(object):
 				The current time in the simulator. It is initialized to 0, and 
 				can be reset to 0 using the reset() function.
 
-		-	LIST: viruses
-				A list of viruses currently present in the simulator. It is 
+		-	LIST: pathogens
+				A list of pathogens currently present in the simulator. It is 
 				initialized to an empty list, and  
 		"""
 		super(Simulator, self).__init__()
 		
 		self.current_time = 0
 
-		self.viruses = []
+		self.pathogens = []
+
+	def add_pathogens(self, pathogens)
 
 
 	def increment_timestep(self):
@@ -50,8 +52,8 @@ class Simulator(object):
 		"""
 		This resets the Simulator object by setting:
 			self.current_time: 0
-			self.viruses: [] #empty list
+			self.pathogens: [] #empty list
 		"""
 
 		self.current_time = 0
-		self.viruses = []
+		self.pathogens = []
