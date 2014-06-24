@@ -36,14 +36,14 @@ class Pathogen(object):
 
 		-	TUPLE: progeny_size
 				a two-tuple that describes the (mean, var) of the burst size 
-				per virus. These are the Normal distribution parameters. In 
+				per pathogen. These are the Normal distribution parameters. In 
 				practice, while a floating point number is drawn from the 
 				Normal distribution, it will be rounded to an integer number.
 
 		-	INT or STRING: convenient_id
 				a string or an integer that provides a convenient 
-				representation of the virus. This item is not involved in any 
-				computation. 
+				representation of the pathogen. This item is not involved in 
+				any computation. 
 
 				It is best practice to keep convenient_id to a short element, 
 				such as a string of less than 5 characters, or an integer of 
@@ -79,12 +79,14 @@ class Pathogen(object):
 		INPUTS:
 		-	OBJECT: other_pathogen
 				The other pathogen with which to reassort.
+
 		-	INT: current_time
 				The time at which the reassortment event happened.
 
+
 		OUTPUTS:
 		-	OBJECT: new_pathogen
-				The reassortant progeny from the two viruses.
+				The reassortant progeny from the two pathogens.
 		"""
 
 		new_pathogen = copy(self)
@@ -118,10 +120,11 @@ class Pathogen(object):
 				This number will be set to the "creation_time" of the new 
 				pathogen, and is passed into the replicate() function.
 
+
 		OUTPUTS:
 		-	LIST: progeny
-				A list of progeny viruses that can be extended onto a "master 
-				list" of viruses.
+				A list of progeny pathogens that can be extended onto a 
+				"master list" of pathogens.
 		"""
 		mean = self.progeny_size[0]
 		var = self.progeny_size[1]
@@ -144,6 +147,7 @@ class Pathogen(object):
 		-	INT: current_time
 				This number will be set to the "creation_time" of the new 
 				pathogen.
+
 
 		OUTPUTS:
 		-	OBJECT: new_pathogen
@@ -183,7 +187,7 @@ class Pathogen(object):
 
 	def is_reassorted(self):
 		"""
-		THis method returns a Boolean value telling us if the pathogen is 
+		This method returns a Boolean value telling us if the pathogen is 
 		a "reassorted" pathogen. A "reassorted" pathogen is one that has 
 		genomic segments from two different parents.
 		"""
@@ -194,5 +198,8 @@ class Pathogen(object):
 			return False
 
 	def mutations(self):
+		"""
+		This method prints the mutations present inside the pathogen. 
+		"""
 		for segment in self.segments:
 			print segment.mutations
