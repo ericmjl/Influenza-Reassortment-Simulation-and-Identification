@@ -32,11 +32,11 @@ class Simulator(object):
 		self.pathogens = []
 
 	def increment_timestep(self):
-
 		"""
-		This is the customizable part of the simulator.
+		This is the customizable part of the simulator. In the actual 
+		simulation code, one has to subclass the Simulator and implement 
+		increment_timestep. All other methods are available to the subclass.
 		"""
-
 		pass
 
 	def run(self, timesteps):
@@ -97,7 +97,7 @@ class Simulator(object):
 
 
 				id_tuple = (pathogen.id, segment_number, creation_time)
-				sequence = SeqRecord(sequence_string, id="%s_%s_%s" % id_tuple)
+				sequence = SeqRecord(sequence_string, id="%s|Segment_%s|Time_%s" % id_tuple)
 
 				sequences.append(sequence)
 
