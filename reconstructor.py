@@ -36,6 +36,8 @@ class Reconstructor(object):
 		super(Reconstructor, self).__init__()
 		
 		self.sequences = dict()
+		for segment in segments:
+			self.sequences[segment] = []
 
 		self.graphs = dict()
 
