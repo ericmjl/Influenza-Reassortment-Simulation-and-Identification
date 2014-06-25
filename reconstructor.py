@@ -3,8 +3,12 @@ Author: Eric J. Ma
 Affiliation: Massachusetts Institute of Technology
 """
 
+from Levenshtein import distance
+
 class Reconstructor(object):
-	"""docstring for Reconstructor"""
+	"""
+	The Reconstructor class holds the composable methods for reconstructing 
+	networks from genetic information."""
 	def __init__(self):
 		"""
 		The Reconstructor class allows us the flexibility to test different 
@@ -28,3 +32,8 @@ class Reconstructor(object):
 
 		self.graphs = [] 
 		
+
+	def compute_levenshtein_matrix(self, sequences):
+		"""
+		This method takes in a list of BioPython SeqRecord objects and returns 
+		"""
