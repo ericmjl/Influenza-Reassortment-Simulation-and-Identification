@@ -36,10 +36,12 @@ class Reconstructor(object):
 		super(Reconstructor, self).__init__()
 		
 		self.sequences = dict()
+		self.graphs = dict()
 		for segment in segments:
 			self.sequences[segment] = []
+			self.graphs[segment] = None
 
-		self.graphs = dict()
+
 
 	def read_fasta_file(self, fasta_file):
 		"""
