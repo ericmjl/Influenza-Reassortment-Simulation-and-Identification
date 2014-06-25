@@ -36,6 +36,9 @@ class Simulator(object):
 		This is the customizable part of the simulator. In the actual 
 		simulation code, one has to subclass the Simulator and implement 
 		increment_timestep. All other methods are available to the subclass.
+
+		NOTE: self.current_time is set in the run() function, not in the 
+		increment_timestep() function. Do not change that logic here.
 		"""
 		pass
 
@@ -97,7 +100,7 @@ class Simulator(object):
 
 
 				id_tuple = (pathogen.id, segment_number, creation_time)
-				sequence = SeqRecord(sequence_string, id="%s|Segment_%s|Time_%s" % id_tuple)
+				sequence = SeqRecord(sequence_string, id="%s|%s|%s" % id_tuple)
 
 				sequences.append(sequence)
 
