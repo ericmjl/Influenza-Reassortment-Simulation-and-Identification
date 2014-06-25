@@ -169,7 +169,7 @@ class Reconstructor(object):
 						G.add_edge(node1[0], node2[0], weight=weight, \
 							segment=segment)
 
-	def prune_graph(self):
+	def prune_graph(self, G):
 		"""
 		This method prunes the graph down, such that the only edges remaining 
 		are the in_edges of minimum weight for each node.
@@ -191,5 +191,56 @@ class Reconstructor(object):
 		"""
 		This method composes each of the segment transmission graphs into a 
 		single MultiDiGraph.
+
+		OUTPUTS:
+		-	MULTIDIGRAPH: composed_graph
+				A graph that contains all of the edges present in each of the 
+				segment graphs.
 		"""
-		
+		composed_graph = nx.MultiDiGraph()
+
+		for segment in self.graphs:
+			G = self.graphs[segment]
+
+			composed_graph.add_edges_from(G.edges(data=True))
+
+		return composed_graph
+
+	def condense_composed_segment_graphs(self):
+		"""
+		This method condenses the composed segment graphs into a single 
+		DiGraph that keeps track of the number of segments transmitted in each 
+		edge, while also summing up the weights.
+
+		OUTPUTS:
+		-	DIGRAPH: condensed_graph
+				A graph that contains all of the nodes, with the edges from 
+				the composed graph condensed into a list, and the weights from 
+				each edge summed up.
+		"""
+
+		composed_graph = self.compose_segment_graphs()
+
+		# Initialize the new graph
+		condensed_graph = nx.DiGraph()
+		condensed_graph.add_nodes_from(H.nodes(data=True))
+
+		# Initialize the edges dictionary
+		edges = dict()
+		for edge in composed_graph.edges(data=True):
+			nodes = (edge[0], edge[1])
+			edges[nodes] = dict()
+			edges[nodes]['segments'] = []
+			edges[nodes]['weight'] = 0
+
+		# Condense the segments into a list, and sum up the weights.
+		for edge in composed_graph.edges(data=True):
+			nodes = (edge[0], edge[1])
+			edges[nodes]['segments'].append(edge[2]['segment'])
+			edges[nodes]['weight'] += edge[2]['weight']
+
+		# Add the edges into the comdensed_graph.
+		for nodes, attributes in edges.items():
+			condensed_graph.add_edge(nodes[0], nodes[1], attr_dict=attributes)
+
+		return condensed_graph
