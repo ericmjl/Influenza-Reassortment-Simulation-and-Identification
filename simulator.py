@@ -53,7 +53,7 @@ class Simulator(object):
 		-	INT: timesteps
 				The number of time steps that the simulation has to run.
 		"""
-		for i in range(timesteps):
+		for i in range(1, timesteps):
 			self.current_time = i
 			self.increment_timestep()
 

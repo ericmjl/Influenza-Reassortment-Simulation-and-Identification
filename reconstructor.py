@@ -167,8 +167,9 @@ class Reconstructor(object):
 				add_attribute(node, attribute_dict)
 
 				# Add the sequence to the node
-				G.node[node_name]['sequence_%s' % \
-				str(required_attributes['segment_number'])] = str(sequence.seq)
+
+				G.node[node_name]['sequence_%s' % str(segment)] \
+				= str(sequence.seq)
 		#################### END IMPORTANT LOGIC ##############################
 
 
@@ -181,13 +182,17 @@ class Reconstructor(object):
 		for segment in self.graphs:
 			G = self.graphs[segment]
 
-			for node1 in G.nodes(data=True):
-				for node2 in G.nodes(data=True):
-					if node1[1]['creation_time'] < node2[1]['creation_time']:
-						weight = distance(node1[1]['sequence'], \
-							node2[1]['sequence'])
-						G.add_edge(node1[0], node2[0], weight=weight, \
+			sequence = 'sequence_%s' % str(segment)
+
+			for source in G.nodes(data=True):
+				for sink in G.nodes(data=True):
+					if int(source[1]['creation_time']) < int(sink[1]['creation_time']):
+						weight = distance(source[1][sequence], \
+							sink[1][sequence])
+						G.add_edge(source[0], sink[0], weight=weight, \
 							segment=segment)
+					if source[1]['creation_time'] >= sink[1]['creation_time']:
+						pass
 
 	def prune_graphs_by_weight(self):
 		"""
@@ -199,6 +204,7 @@ class Reconstructor(object):
 
 			for node in G.nodes(data=True):
 				in_edges = G.in_edges(node[0], data=True)
+				print in_edges
 
 				if len(in_edges) != 0:
 					min_weight = min([edge[2]['weight'] for edge in in_edges])
@@ -211,11 +217,6 @@ class Reconstructor(object):
 		"""
 		This method composes each of the segment transmission graphs into a 
 		single MultiDiGraph.
-
-		OUTPUTS:
-		-	MULTIDIGRAPH: composed_graph
-				A graph that contains all of the edges present in each of the 
-				segment graphs.
 		"""
 		composed_graph = nx.MultiDiGraph()
 
@@ -232,12 +233,6 @@ class Reconstructor(object):
 		This method condenses the composed segment graphs into a single 
 		DiGraph that keeps track of the number of segments transmitted in each 
 		edge, while also summing up the weights.
-
-		OUTPUTS:
-		-	DIGRAPH: condensed_graph
-				A graph that contains all of the nodes, with the edges from 
-				the composed graph condensed into a list, and the weights from 
-				each edge summed up.
 		"""
 
 		composed_graph = self.composed_graph
@@ -272,8 +267,8 @@ class Reconstructor(object):
 		transmission" edge into it, we will remove edges that have fewer than 
 		full transmissions going into it. 
 
-		To keep the code logic readable and compact, two helper functions have
-		 been defined.
+		To keep the code logic readable and compact, two helper functions have 
+		been defined.
 		"""
 
 		#################### BEGIN HELPER FUNCTIONS ###########################
