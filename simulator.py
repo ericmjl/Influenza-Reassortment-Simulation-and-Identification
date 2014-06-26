@@ -31,6 +31,8 @@ class Simulator(object):
 
 		self.pathogens = []
 
+		self.transmission_graph = nx.DiGraph()
+
 	def increment_timestep(self):
 		"""
 		This is the customizable part of the simulator. In the actual 
@@ -124,7 +126,8 @@ class Simulator(object):
 		transmission_graph = nx.DiGraph()
 
 		for pathogen in self.pathogens:
-			transmission_graph.add_node(pathogen)
+			transmission_graph.add_node(pathogen, \
+				creation_time=pathogen.creation_time)
 
 			if len(pathogen.parent) == 0:
 				pass
@@ -138,7 +141,7 @@ class Simulator(object):
 				transmission_graph.add_edge(pathogen.parent[1], pathogen, \
 					weight=0.5)
 
-		return transmission_graph
+		self.transmission_graph = transmission_graph
 
 	def draw_transmission_graph(self, positions=False):
 		"""
@@ -149,10 +152,10 @@ class Simulator(object):
 		-	BOOLEAN: positions
 				If False: the circular layout will be drawn.
 
-				If True: nodes will be 
+				If True: nodes will be restricted in the x-axis.
 
 		"""
-		transmission_graph = self.generate_transmission_graph()
+		transmission_graph = self.transmission_graph
 
 		if positions == False:
 			nx.draw_circular(transmission_graph)

@@ -34,6 +34,12 @@ class Reconstructor(object):
 
 		-	LIST: graphs
 				A list of the graphs that are present.
+
+		-	NETWORKX MULTIDIGRAPH: composed_graph
+				A MultiDiGraph object that stores the composed segment graphs.
+
+		-	NETWORKX DIGRAPH: condensed_graph
+				A DiGraph object that stores the condensed segment graphs.
 		"""
 		super(Reconstructor, self).__init__()
 		
@@ -44,6 +50,10 @@ class Reconstructor(object):
 		for segment in segments:
 			self.sequences[segment] = []
 			self.graphs[segment] = nx.DiGraph()
+
+		self.composed_graph = nx.MultiDiGraph()
+
+		self.condensed_graph = nx.DiGraph()
 
 	def read_fasta_file(self, fasta_file, splitchar='|', pos_segment_num=1):
 		"""
@@ -66,7 +76,7 @@ class Reconstructor(object):
 		sequences = [record for record in SeqIO.parse(fasta_file, 'fasta')]
 		
 		for sequence in sequences:
-			segnum = int(sequence.id.split(split_char)[pos_segment_num])
+			segnum = int(sequence.id.split(splitchar)[pos_segment_num])
 
 			self.sequences[segnum].append(sequence)
 
@@ -108,7 +118,7 @@ class Reconstructor(object):
 			to it from a dictionary of attributes. 
 			"""
 
-			for k, v in attributes.items():
+			for k, v in attributes_dict.items():
 				node[k] = v
 
 		def make_attributes_dict(list_of_attributes, attribute_pos):
@@ -125,7 +135,7 @@ class Reconstructor(object):
 
 		required_attributes = {'id':0, 'segment_number':1, 'creation_time':2}
 
-		if id_attributes = None:
+		if id_attributes == None:
 			id_attributes = required_attributes
 
 		attribute_pos = reverse_dictionary(id_attributes)
@@ -169,7 +179,7 @@ class Reconstructor(object):
 						G.add_edge(node1[0], node2[0], weight=weight, \
 							segment=segment)
 
-	def prune_graph(self, G):
+	def prune_graphs_by_weight(self):
 		"""
 		This method prunes the graph down, such that the only edges remaining 
 		are the in_edges of minimum weight for each node.
@@ -177,7 +187,7 @@ class Reconstructor(object):
 		for segment in self.graphs:
 			G = self.graphs[segment]
 
-			for node in G.edges(data=True):
+			for node in G.nodes(data=True):
 				in_edges =G.in_edges(node[0], data=True)
 
 				if len(in_edges) != 0:
@@ -202,9 +212,10 @@ class Reconstructor(object):
 		for segment in self.graphs:
 			G = self.graphs[segment]
 
+			composed_graph.add_nodes_from(G.nodes(data=True))
 			composed_graph.add_edges_from(G.edges(data=True))
 
-		return composed_graph
+		self.composed_graph = composed_graph
 
 	def condense_composed_segment_graphs(self):
 		"""
@@ -219,11 +230,11 @@ class Reconstructor(object):
 				each edge summed up.
 		"""
 
-		composed_graph = self.compose_segment_graphs()
+		composed_graph = self.composed_graph
 
 		# Initialize the new graph
 		condensed_graph = nx.DiGraph()
-		condensed_graph.add_nodes_from(H.nodes(data=True))
+		condensed_graph.add_nodes_from(composed_graph.nodes(data=True))
 
 		# Initialize the edges dictionary
 		edges = dict()
@@ -243,4 +254,42 @@ class Reconstructor(object):
 		for nodes, attributes in edges.items():
 			condensed_graph.add_edge(nodes[0], nodes[1], attr_dict=attributes)
 
-		return condensed_graph
+		self.condensed_graph = condensed_graph
+
+	def prune_condensed_graph(self):
+		"""
+		This method prunes the condensed graph such that if a node has a "full 
+		transmission" edge into it, we will remove edges that have fewer than 
+		full transmissions going into it. 
+
+		Two helper methods are written to keep the loop depth to a minimum.
+		"""
+
+		def has_full_transmission(in_edges):
+			"""
+			This method checks whether full transmission edges exist amongst 
+			all of the in_edges for a given node. If such an edge exists, 
+			return True, otherwise return False.
+			"""
+			boolean = False
+			for edge in in_edges:
+				if set(edge[2]['segments']) == set(self.segments):
+					boolean = True
+					break
+			return boolean
+
+		def remove_non_full_transmission(graph, in_edges):
+			"""
+			This method removes any edges that do not involve all segments.
+			"""
+			for edge in in_edges:
+				if set(edge[2]['segments']) != set(self.segments):
+					graph.remove_edge(edge[0], edge[1])
+
+
+		for node in self.condensed_graph.nodes(data=True):
+			in_edges = self.condensed_graph.in_edges(node[0], data=True)
+			if has_full_transmission(in_edges):
+				remove_non_full_transmission(self.condensed_graph, in_edges)
+
+
