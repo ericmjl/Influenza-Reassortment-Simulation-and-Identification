@@ -332,7 +332,8 @@ class Reconstructor(object):
 		for node in self.condensed_graph.nodes(data=True):
 			in_edges = self.condensed_graph.in_edges(node[0], data=True)
 
-			if has_no_full_transmissions(in_edges) == True:
+			if len(in_edges) > 0 and \
+			has_no_full_transmissions(in_edges) == True:
 				reassortants.append(node)
 
 		return reassortants

@@ -23,7 +23,8 @@ class Simulator(object):
 
 		-	LIST: pathogens
 				A list of pathogens currently present in the simulator. It is 
-				initialized to an empty list, and  
+				initialized to an empty list, and can be rest to an empty list 
+				using the reset() function.
 		"""
 		super(Simulator, self).__init__()
 		
@@ -190,3 +191,16 @@ class Simulator(object):
 			 , 'w+')
 
 		nx.write_gpickle(transmission_graph, output_handle)
+
+	def identify_reassortants(self):
+		"""
+		This method will return the reassortant pathogens that are present in 
+		the simulation. The reassortant pathogens are identifiable using their 
+		is_reassortant() function.
+		"""
+		reassortants = []
+		for pathogen in self.pathogens:
+			if pathogen.is_reassorted():
+				reassortants.append(pathogen)
+
+		return reassortants
