@@ -99,8 +99,12 @@ class Reconstructor(object):
 		-	CHAR: splitchar (optional)
 				A character that is used for splitting up the SeqRecord.id 
 				attribute
+
+		NOTE: Helper functions are defined here to aid in readability and keep 
+		the code flat where the main logic takes place, (mostly) in accordance 
+		with the Zen of Python.
 		"""
-		####################### START HELPER FUNCTIONS #######################
+		#################### START HELPER FUNCTIONS ###########################
 		def reverse_dictionary(dictionary):
 			"""
 			This method takes in a dictionary and reverses the key, value 
@@ -130,9 +134,9 @@ class Reconstructor(object):
 				attribute_dict[attribute] = list_of_attributes[pos]
 
 			return attribute_dict
-	
-		######################## END HELPER FUNCTIONS ########################
+		#################### END HELPER FUNCTIONS #############################
 
+		#################### BEGIN IMPORTANT LOGIC ############################
 		required_attributes = {'id':0, 'segment_number':1, 'creation_time':2}
 
 		if id_attributes == None:
@@ -159,7 +163,8 @@ class Reconstructor(object):
 				add_attribute(node, attribute_dict)
 
 				# Add the sequence to the node
-				G.node[node_name]['sequence'] = str(sequence.seq)
+				G.node[node_name]['sequence_%s' % ] = str(sequence.seq)
+		#################### END IMPORTANT LOGIC ##############################
 
 
 	def add_edges_with_weight(self):
@@ -188,7 +193,7 @@ class Reconstructor(object):
 			G = self.graphs[segment]
 
 			for node in G.nodes(data=True):
-				in_edges =G.in_edges(node[0], data=True)
+				in_edges = G.in_edges(node[0], data=True)
 
 				if len(in_edges) != 0:
 					min_weight = min([edge[2]['weight'] for edge in in_edges])
@@ -262,10 +267,12 @@ class Reconstructor(object):
 		transmission" edge into it, we will remove edges that have fewer than 
 		full transmissions going into it. 
 
-		Two helper methods are written to keep the loop depth to a minimum.
+		To keep the code logic readable and compact, two helper functions have
+		 been defined.
 		"""
 
-		def has_full_transmission(in_edges):
+		#################### BEGIN HELPER FUNCTIONS ###########################
+		def has_at_least_one_full_transmission(in_edges):
 			"""
 			This method checks whether full transmission edges exist amongst 
 			all of the in_edges for a given node. If such an edge exists, 
@@ -285,11 +292,52 @@ class Reconstructor(object):
 			for edge in in_edges:
 				if set(edge[2]['segments']) != set(self.segments):
 					graph.remove_edge(edge[0], edge[1])
+		#################### END HELPER FUNCTIONS #############################
 
+
+		#################### BEGIN IMPORTANT LOGIC ############################
+		for node in self.condensed_graph.nodes(data=True):
+			in_edges = self.condensed_graph.in_edges(node[0], data=True)
+			if has_at_least_one_full_transmission(in_edges): 
+				remove_non_full_transmission(self.condensed_graph, in_edges)
+		#################### END IMPORTANT LOGIC ##############################
+
+	def identify_reassortants(self):
+		"""
+		This method identifies the reassortant viruses that are present in the 
+		reconstruction. 
+
+		The reassortant viruses are the viruses that do not have full 
+		transmissions going into it. We use the helper function defined at the 
+		bottom of this file.
+		"""
+
+		#################### BEGIN HELPER FUNCITON ############################
+		def has_no_full_transmissions(in_edges):
+			"""
+			In contrast to the has_at_least_one_full_transmission() method 
+			defined above, this function returns True if there are no full 
+			transmissions present. As usual, this helper function is defined 
+			to keep the main code readable and compact.
+			"""
+			boolean = True
+			for edge in in_edges:
+				if set(edge[2]['segments']) == set(self.segments):
+					boolean = False
+					break
+			return boolean
+		#################### END HELPER FUNCITON ##############################
+		reassortants = []
 
 		for node in self.condensed_graph.nodes(data=True):
 			in_edges = self.condensed_graph.in_edges(node[0], data=True)
-			if has_full_transmission(in_edges):
-				remove_non_full_transmission(self.condensed_graph, in_edges)
+
+			if has_no_full_transmissions(in_edges) == True:
+				reassortants.append(node)
+
+		return reassortants
+
+
+
 
 

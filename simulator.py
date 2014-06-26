@@ -162,8 +162,8 @@ class Simulator(object):
 
 		if positions == True:
 			positions = dict()
-			for virus in self.pathogens:
-				positions[virus] = (virus.creation_time, randint(0, 20))
+			for pathogen in self.pathogens:
+				positions[pathogen] = (pathogen.creation_time, randint(0, 20))
 
 			nx.draw(transmission_graph, pos=positions)
 
