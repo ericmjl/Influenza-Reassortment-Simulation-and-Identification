@@ -204,3 +204,32 @@ class Simulator(object):
 				reassortants.append(pathogen)
 
 		return reassortants
+
+	def relabel_transmission_graph(self):
+		"""
+		This method will return a COPY of the transmission graph with the 
+		nodes relabeled as strings rather than pathogen objects. 
+
+		OUTPUTS:
+		-	NETWORKX DIGRAPH: relabeled_transmission_graph
+		"""
+		# Create mapping from object to string
+		mapping = dict()
+		for node in self.transmission_graph.nodes():
+			mapping[node] = str(node)
+
+		# Relabel the transmission graph in a copy of the transmission graph
+		relabeled_transmission_graph = nx.relabel_nodes(\
+			self.transmission_graph, mapping)
+	
+		return relabeled_transmission_graph
+
+
+
+
+
+
+
+
+
+
