@@ -327,6 +327,7 @@ class Reconstructor(object):
 					break
 			return boolean
 		#################### END HELPER FUNCITON ##############################
+
 		reassortants = []
 
 		for node in self.condensed_graph.nodes(data=True):
@@ -337,6 +338,13 @@ class Reconstructor(object):
 				reassortants.append(node)
 
 		return reassortants
+
+
+
+
+
+
+
 
 
 
