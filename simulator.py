@@ -34,6 +34,8 @@ class Simulator(object):
 
 		self.transmission_graph = nx.DiGraph()
 
+		self.relabeled_transmission_graph = nx.DiGraph()
+
 	def increment_timestep(self):
 		"""
 		This is the customizable part of the simulator. In the actual 
@@ -207,11 +209,9 @@ class Simulator(object):
 
 	def relabel_transmission_graph(self):
 		"""
-		This method will return a COPY of the transmission graph with the 
-		nodes relabeled as strings rather than pathogen objects. 
-
-		OUTPUTS:
-		-	NETWORKX DIGRAPH: relabeled_transmission_graph
+		This method will assign the self.relabeled_transmission_graph 
+		attribute with the nodes relabeled as strings rather than pathogen 
+		objects. 
 		"""
 		# Create mapping from object to string
 		mapping = dict()
@@ -221,8 +221,9 @@ class Simulator(object):
 		# Relabel the transmission graph in a copy of the transmission graph
 		relabeled_transmission_graph = nx.relabel_nodes(\
 			self.transmission_graph, mapping)
-	
-		return relabeled_transmission_graph
+
+		# Assign relabeled graph to self.relabeled_transmission_graph
+		self.relabeled_transmission_graph = relabeled_transmission_graph
 
 
 

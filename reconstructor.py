@@ -204,7 +204,6 @@ class Reconstructor(object):
 
 			for node in G.nodes(data=True):
 				in_edges = G.in_edges(node[0], data=True)
-				print in_edges
 
 				if len(in_edges) != 0:
 					min_weight = min([edge[2]['weight'] for edge in in_edges])
