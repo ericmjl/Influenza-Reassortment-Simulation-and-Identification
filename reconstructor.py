@@ -94,7 +94,8 @@ class Reconstructor(object):
 					 'segment_number':1, 
 					 'creation_time':2}
 
-				Those three fields must be guaranteed to be present. Otherwise, an Error message will be raised.
+				Those three fields must be guaranteed to be present. 
+				Otherwise, an Error message will be raised.
 
 		-	CHAR: splitchar (optional)
 				A character that is used for splitting up the SeqRecord.id 
@@ -127,7 +128,9 @@ class Reconstructor(object):
 
 		def make_attributes_dict(list_of_attributes, attribute_pos):
 			"""
-			This method takes in a dictionary of {positions:attribute_ids}, and returns an attribute dictionary of {attribute_ids:attribute_value}, using the list_of_attributes.
+			This method takes in a dictionary of {positions:attribute_ids}, 
+			and returns an attribute dictionary of 
+			{attribute_ids:attribute_value}, using the list_of_attributes.
 			"""
 			attribute_dict = dict()
 			for pos, attribute in attribute_pos.items():
@@ -152,7 +155,8 @@ class Reconstructor(object):
 				list_of_attributes = sequence.id.split(splitchar)
 
 				# Make an attributes dictionary
-				attribute_dict = make_attributes_dict(list_of_attributes, attribute_pos)
+				attribute_dict = make_attributes_dict(list_of_attributes, \
+					attribute_pos)
 
 				# Add the node using the node name.
 				node_name = attribute_dict['id'][0:5]
@@ -163,7 +167,8 @@ class Reconstructor(object):
 				add_attribute(node, attribute_dict)
 
 				# Add the sequence to the node
-				G.node[node_name]['sequence_%s' % ] = str(sequence.seq)
+				G.node[node_name]['sequence_%s' % \
+				str(required_attributes['segment_number'])] = str(sequence.seq)
 		#################### END IMPORTANT LOGIC ##############################
 
 
