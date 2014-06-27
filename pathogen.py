@@ -97,6 +97,7 @@ class Pathogen(object):
 
 		new_pathogen.mutate()
 
+		print new_pathogen.parent
 		return new_pathogen
 
 	def generate_progeny(self, current_time):
@@ -143,12 +144,14 @@ class Pathogen(object):
 				The replicated pathogen.
 		"""
 		new_pathogen = copy(self)
+		new_pathogen.parent = dict()
 		new_pathogen.parent[self] = self.get_segment_numbers()
 		new_pathogen.creation_time = current_time
 		new_pathogen.id = generate_id()
 		new_pathogen.segments = deepcopy(self.segments)
 		new_pathogen.mutate()
 
+		print new_pathogen.parent
 		return new_pathogen
 
 	def mutate(self):
