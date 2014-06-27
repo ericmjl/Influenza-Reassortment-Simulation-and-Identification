@@ -11,7 +11,7 @@ from numpy.random import normal
 class Pathogen(object):
 	"""The Pathogen class models a generic pathogen."""
 	def __init__(self, segments, creation_time, progeny_size, \
-		parent=tuple(), convenient_id=None):
+		parent=dict(), convenient_id=None):
 		"""
 		Initialize the pathogen.
 
@@ -24,14 +24,12 @@ class Pathogen(object):
 				an integer number that specifies the time within the 
 				simulation that the pathogen was created.
 
-		- 	TUPLE: parent
-				A tuple that specifies the parent of the pathogen. 
-					-	If the tuple is empty, then the pathogen is a seed 
-						pathogen.
-					-	If the tuple has one element, then the pathogen was 
-						replicated from one other pathogen.
-					-	If the tuple has two elements, then the pathogen was a 
-						reassortant of two parental pathogens.
+		- 	DICTIONARY: parent
+				A dictionary that specifies the parent of the pathogen. 
+				The (key, value) pairs are (parent, segments transmitted).
+					-	If the dictionary is empty, then the pathogen is a seed pathogen.
+					-	If the dictionary has one (key, value) pair, then the pathogen was replicated from one other pathogen.
+					-	If the dictionary has two (key, value) pairs, then the pathogen was a reassortant of two parental pathogens.
 
 		-	STRING: id
 				a string generated form the generate_id function that uniquely 
@@ -59,12 +57,6 @@ class Pathogen(object):
 
 	def __repr__(self):
 		return self.id[0:5]
-		# Testing if it is better to represent only the first 5 characters of 
-		# self.id
-		# if self.convenient_id == None:
-		# 	return str(self.id)
-		# else:
-		# 	return str(self.convenient_id)
 
 	def reassort_with(self, other_pathogen, current_time): 
 		#, convenient_id=None):
@@ -90,19 +82,18 @@ class Pathogen(object):
 		new_pathogen = copy(self)
 		new_pathogen.creation_time = current_time
 		new_pathogen.id = generate_id()
-		# new_pathogen.convenient_id = new_pathogen.id[0:5]
 		new_pathogen.segments = []
 		
-		parent = set()
+		# Assign parent differently from the replicate() function.
+		parent = dict()
 		for segment in zip(self.segments, other_pathogen.segments):
 			i = choice([0, 1])
 			new_pathogen.segments.append(deepcopy(segment[i]))
-
 			if i == 0:
-				parent.add(self)
+				parent[self] = [segment[0].segment_number]
 			elif i == 1:
-				parent.add(other_pathogen)
-		new_pathogen.parent = tuple(parent)
+				parent[other_pathogen] = [segment[1].segment_number]
+		new_pathogen.parent = parent
 
 		new_pathogen.mutate()
 
@@ -152,10 +143,9 @@ class Pathogen(object):
 				The replicated pathogen.
 		"""
 		new_pathogen = copy(self)
-		new_pathogen.parent = tuple([self])
+		new_pathogen.parent[self] = self.get_segment_numbers()
 		new_pathogen.creation_time = current_time
 		new_pathogen.id = generate_id()
-		# new_pathogen.convenient_id = new_pathogen.id[0:5]
 		new_pathogen.segments = deepcopy(self.segments)
 		new_pathogen.mutate()
 
@@ -201,3 +191,34 @@ class Pathogen(object):
 		"""
 		for segment in self.segments:
 			print segment.mutations
+
+	def get_segment(self, segment_number):
+		"""
+		This method returns the given segment by segment number.
+
+		INPUTS:
+		-	INT: segment_number
+				The integer number of the segment corresponding to the Segment 
+				object's segment_number attribute
+
+		OUTPUTS:
+		-	SEGMENT OBJECT: seg
+				The Segment object from the pathogen that has the 
+				corresponding Segment number as specified in its 
+				segment_number attribute.
+		"""
+		for segment in self.segments:
+			if segment.segment_number == segment_number:
+				return segment
+
+	def get_segment_numbers(self):
+		"""
+		This method returns a list of all of the segment numbers for each of 
+		the segments present in the pathogen.
+		"""
+		segment_numbers = []
+		for segment in self.segments:
+			segment_numbers.append(segment.segment_number)
+
+		return segment_numbers
+

@@ -7,8 +7,10 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 from Bio.Alphabet import IUPAC
-import networkx as nx
 from random import randint
+from Levenshtein import distance
+
+import networkx as nx
 
 class Simulator(object):
 	"""The Simulator class defines how a simulation run happens."""
@@ -123,8 +125,47 @@ class Simulator(object):
 		"""
 		This method creates the ground truth transmission graph in memory.
 
-		NOTE: to draw to screen, call on draw_transmission_graph().
+		NOTE: The data structure of the edges has to match the data structure 
+		of the edges in the reconstruction. As of 27 June 2014, Reconstructor 
+		graph edges have the following dictionary attributes:
+
+			-	'segments' = [1, 4] (LIST: INT segment numbers)
+			-	'weight' = 9 (INT Levenshtein distance between two isolates)
+
+		NOTE: To draw to screen, call on draw_transmission_graph().
+
+		NOTE: We have defined a few helper functions to get the sequences of 
+		each segment in a pathogen.
 		"""
+
+		#################### BEGIN HELPER FUNCTIONS ###########################
+		def edge_levenshtein_distance(parent, progeny, segments):
+			"""
+			This method computes the total Levenshtein distance over all 
+			segments that were transmitted from parent to progeny. The parent 
+			and progeny are Pathogen objects, and segments is a list of 
+			integer numbers.
+			"""	
+			lev_dist = 0
+			for segment in segments:
+				lev_dist += segment_levdist(parent, progeny, segment)
+
+			return lev_dist
+
+		def segment_levdist(pathogen1, pathogen2, segment_number):
+			"""
+			This method returns the Levenshtein distance between two 
+			pathogens' stipulated segment.
+			"""
+			# Get the sequence for each of the segments
+			segment1 = pathogen1.get_segment(segment_number).compute_sequence()
+			segment2 = pathogen2.get_segment(segment_number).compute_sequence()
+
+			# Compute the Levenshtein distance
+			lev_dist = distance(segment1, segment2)
+
+			return lev_dist
+		#################### END HELPER FUNCTIONS #############################
 
 		transmission_graph = nx.DiGraph()
 
@@ -132,17 +173,33 @@ class Simulator(object):
 			transmission_graph.add_node(pathogen, \
 				creation_time=pathogen.creation_time)
 
+			# Pass if the parent is empty - this means that the pathogen was a 
+			# seed pathogen 
 			if len(pathogen.parent) == 0:
 				pass
-			if len(pathogen.parent) == 1:
-				transmission_graph.add_edge(pathogen.parent[0], pathogen, \
-					weight=1.0)
 
-			if len(pathogen.parent) == 2:
-				transmission_graph.add_edge(pathogen.parent[0], pathogen, \
-					weight=0.5)
-				transmission_graph.add_edge(pathogen.parent[1], pathogen, \
-					weight=0.5)
+			else:
+				for parent, segments in pathogen.parent.items():
+					weight = edge_levenshtein_distance(parent, pathogen, \
+						segments) 
+
+					transmission_graph.add_edge(parent, pathogen, weight=weight, segments=segments)
+
+			# Add an edge comprising of all segments if the progeny pathogen 
+			# was replicated from a single parent pathogen.
+			# if len(pathogen.parent) == 1:
+			# 	weight = isolate_levdist(pathogen.parent, pathogen)
+			# 	segments = pathogen.get_segment_numbers()
+			# 	transmission_graph.add_edge(pathogen.parent[0], pathogen, \
+			# 		weight=weight, segments=segments)
+
+			# Add an edge comprising the segment that was transmitted for each 
+			# parent pathogen.
+			# if len(pathogen.parent) == 2:
+			# 	transmission_graph.add_edge(pathogen.parent[0], pathogen, \
+			# 		weight=0.5)
+			# 	transmission_graph.add_edge(pathogen.parent[1], pathogen, \
+			# 		weight=0.5)
 
 		self.transmission_graph = transmission_graph
 
@@ -228,9 +285,29 @@ class Simulator(object):
 
 
 
+#################### COMMENTED OUT HELPER FUNCTIONS ###########################
+# As it turns out, isolate_levdist may not be helpful. Commented out 
+# on 27 June 2014 to be saved for another time.
+# def isolate_levdist(pathogen1, pathogen2):
+# 	"""
+# 	This returns the distance between two isolates.
 
+# 	Steps:
+# 	1. 	Zip together the segments from each of the isolates, such that 
+# 		we have a list:
 
+# 		[(pathogen1_seg1, pathogen2_seg1), \
+# 		(pathogen1_seg2, pathogen2_seg2)]
 
+# 	2. 	Iterate over the list, and compute the Levenshtein distance 
+# 		between the two segments' sequences.
+# 	"""
 
+# 	segments = zip(pathogen1.segments, pathogen2.segments)
+# 	lev_dist = 0
 
+# 	for segment in segments:
+# 		lev_dist += distance(segment[0].compute_sequence(), \
+# 			segment[1].compute_sequence())
 
+# 	return lev_dist
