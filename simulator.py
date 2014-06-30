@@ -320,11 +320,12 @@ class Simulator(object):
 			path1 = find_set_with_element(paths, edge[0])
 			path2 = find_set_with_element(paths, edge[1])
 
-			new_path = path1.union(path2)
+			if path1 != path2:
+				new_path = path1.union(path2)
 
-			paths.pop(paths.index(path1))
-			paths.pop(paths.index(path2))
-			paths.append(new_path)
+				paths.pop(paths.index(path1))
+				paths.pop(paths.index(path2))
+				paths.append(new_path)
 
 		# Step 3: Set the transmission_paths attribute to be the list of paths 
 		# that are present in the graph.
@@ -349,9 +350,7 @@ class Simulator(object):
 		"""
 
 		boolean = False
-		paths = self.paths() 	# Note: calling this function will also update 
-								# the self.transmission_paths attribute.
-
+		paths = self.paths()
 		for path in paths:
 			if node1 in path and node2 in path:
 				boolean = True
@@ -359,29 +358,3 @@ class Simulator(object):
 
 		return boolean
 
-#################### COMMENTED OUT HELPER FUNCTIONS ###########################
-# As it turns out, isolate_levdist may not be helpful. Commented out 
-# on 27 June 2014 to be saved for another time.
-# def isolate_levdist(pathogen1, pathogen2):
-# 	"""
-# 	This returns the distance between two isolates.
-
-# 	Steps:
-# 	1. 	Zip together the segments from each of the isolates, such that 
-# 		we have a list:
-
-# 		[(pathogen1_seg1, pathogen2_seg1), \
-# 		(pathogen1_seg2, pathogen2_seg2)]
-
-# 	2. 	Iterate over the list, and compute the Levenshtein distance 
-# 		between the two segments' sequences.
-# 	"""
-
-# 	segments = zip(pathogen1.segments, pathogen2.segments)
-# 	lev_dist = 0
-
-# 	for segment in segments:
-# 		lev_dist += distance(segment[0].compute_sequence(), \
-# 			segment[1].compute_sequence())
-
-# 	return lev_dist
