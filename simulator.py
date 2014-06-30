@@ -38,6 +38,8 @@ class Simulator(object):
 
 		self.relabeled_transmission_graph = nx.DiGraph()
 
+		self.transmission_paths = []
+
 	def increment_timestep(self):
 		"""
 		This is the customizable part of the simulator. In the actual 
@@ -281,9 +283,81 @@ class Simulator(object):
 
 		# Assign relabeled graph to self.relabeled_transmission_graph
 		self.relabeled_transmission_graph = relabeled_transmission_graph
+		
 
+	def paths(self):
+		"""
+		This method will update and return the set of paths between all nodes 
+		present in the simulation. The exact structure is a disjoint set. We 
+		first create a singleton set for each node in the transmission graph. 
+		We then iterate over each edge and union the sets containing the nodes.
 
+		NOTE: We are going to use the relabeled transmission graph in this 
+		case, rather than the original transmission graph, as this will yield 
+		a set of strings that can be compared with the reconstruction, which 
+		also uses strings as node labels.
+		"""
 
+		# Step 1: Initialize singleton sets for each of the nodes in the 
+		# transmission graph.
+		paths = []
+		for node in self.relabeled_transmission_graph.nodes():
+			paths.append(set([node]))
+
+		def find_set_with_element(paths, element):
+			"""
+			This method will return the set that contains the specified 
+			element.
+			"""
+
+			for path in paths:
+				if element in path:
+					return path
+
+		# Step 2: Iterate over all the edges. Find the sets that contain the 
+		# two nodes, and union them.
+		for edge in self.relabeled_transmission_graph.edges():
+			path1 = find_set_with_element(paths, edge[0])
+			path2 = find_set_with_element(paths, edge[1])
+
+			new_path = path1.union(path2)
+
+			paths.pop(paths.index(path1))
+			paths.pop(paths.index(path2))
+			paths.append(new_path)
+
+		# Step 3: Set the transmission_paths attribute to be the list of paths 
+		# that are present in the graph.
+
+		self.transmission_paths = paths
+
+		return self.transmission_paths
+
+	def path_exists(self, node1, node2):
+		"""
+		This method will return True if a path exists between two nodes.
+
+		INPUTS:
+		-	STRING: node1, node2
+				The nodes that we are using for path identification are 
+				strings. Therefore, node1 and node2 are strings. They are the 
+				labels of the nodes present in the graph.
+
+		OUTPUTS:
+		-	BOOLEAN result that tells us if a path exists between the two 
+			nodes.
+		"""
+
+		boolean = False
+		paths = self.paths() 	# Note: calling this function will also update 
+								# the self.transmission_paths attribute.
+
+		for path in paths:
+			if node1 in path and node2 in path:
+				boolean = True
+				break
+
+		return boolean
 
 #################### COMMENTED OUT HELPER FUNCTIONS ###########################
 # As it turns out, isolate_levdist may not be helpful. Commented out 
