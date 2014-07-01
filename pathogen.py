@@ -86,6 +86,16 @@ class Pathogen(object):
 		
 		# Assign parent differently from the replicate() function.
 		parent = dict()
+
+		def pool_segments(pathogen1, pathogen2):
+			"""
+			This method will pool the segments together into a dictionary data 
+			structure where the key-value pairs are (segment number, list of 
+			segments that have that segment number).
+			"""
+			
+
+
 		for segment in zip(self.segments, other_pathogen.segments):
 			i = choice([0, 1])
 			new_pathogen.segments.append(deepcopy(segment[i]))
@@ -97,7 +107,7 @@ class Pathogen(object):
 
 		new_pathogen.mutate()
 
-		print new_pathogen.parent
+		# print new_pathogen.parent
 		return new_pathogen
 
 	def generate_progeny(self, current_time):
