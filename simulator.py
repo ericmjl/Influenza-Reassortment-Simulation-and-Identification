@@ -53,7 +53,7 @@ class Simulator(object):
 
 		self.full_transmission_paths = []
 
-		self.segment_graphs = dict()
+		self.segment_paths = dict()
 
 	def increment_timestep(self):
 		"""
@@ -321,14 +321,7 @@ class Simulator(object):
 		for node in self.relabeled_transmission_graph.nodes():
 			paths.append(set([node]))
 
-		def find_set_with_element(paths, element):
-			"""
-			This method will return the set that contains the specified 
-			element.
-			"""
-			for path in paths:
-				if element in path:
-					return path
+		
 
 		# Step 2: Iterate over all the edges. Find the sets that contain the 
 		# two nodes, and union them.
@@ -354,7 +347,8 @@ class Simulator(object):
 
 	def transmission_path_exists(self, node1, node2):
 		"""
-		This method will return True if a path exists between two nodes.
+		This method will return True if a full transmission path exists 
+		between two nodes.
 
 		INPUTS:
 		-	STRING: node1, node2
@@ -375,4 +369,61 @@ class Simulator(object):
 				break
 
 		return boolean
+
+	def identify_segment_paths(self):
+		"""
+		This method will identify the transmission paths for each segment. 
+		"""
+
+		segment_paths = dict()
+
+		# Step 1: Initialize the dictionary with such that the keys are the 
+		# segment numbers of the pathogens being considered.
+		segment_numbers = set()
+		for pathogen in self.transmission_graph.nodes():
+			for segment in pathogen.segments:
+				segment_numbers.add(segment.segment_number)
+
+		for number in segment_numbers:
+			segment_paths[number] = []
+
+		# Step 2: For each segment, add nodes to the graph.
+		for node in self.relabeled_transmission_graph.nodes():
+			for number in segment_numbers:
+				segment_numbers[number].append(set([node]))
+
+		# Step 3: Union-Find all of the paths.
+		for edge in self.relabeled_transmission_graph.edges(data=True):
+			# path1 = 
+			pass
+
+
+
+
+
+
+
+
+
+
+
+def find_set_with_element(paths, element):
+	"""
+	This method will return the set that contains the specified 
+	element.
+	"""
+	for path in paths:
+		if element in path:
+			return path
+
+
+
+
+
+
+
+
+
+
+
 
