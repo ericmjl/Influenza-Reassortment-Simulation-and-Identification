@@ -58,8 +58,7 @@ class Pathogen(object):
 	def __repr__(self):
 		return self.id[0:5]
 
-	def reassort_with(self, other_pathogen, current_time): 
-		#, convenient_id=None):
+	def reassort_with(self, other, current_time): 
 		"""
 		This method takes in another pathogen and returns a progeny with 
 		genomic segments that are randomly selected from segments from both
@@ -67,7 +66,7 @@ class Pathogen(object):
 		replication, but the step at which segments are added is different.
 
 		INPUTS:
-		-	OBJECT: other_pathogen
+		-	OBJECT: other
 				The other pathogen with which to reassort.
 
 		-	INT: current_time
@@ -86,23 +85,20 @@ class Pathogen(object):
 		
 		# Assign parent differently from the replicate() function.
 		parent = dict()
+		parent[self] = []
+		parent[other] = []
 
-		def pool_segments(pathogen1, pathogen2):
-			"""
-			This method will pool the segments together into a dictionary data 
-			structure where the key-value pairs are (segment number, list of 
-			segments that have that segment number).
-			"""
-			
-
-
-		for segment in zip(self.segments, other_pathogen.segments):
+		# Iterate over all of the segments.
+		for segment in self.segments:
 			i = choice([0, 1])
-			new_pathogen.segments.append(deepcopy(segment[i]))
+			segment_number = segment.segment_number
+			segments_to_choose_from = (segment, \
+				other.get_segment(segment_number))
+			new_pathogen.segments.append(deepcopy(segments_to_choose_from[i]))
 			if i == 0:
-				parent[self] = [segment[0].segment_number]
-			elif i == 1:
-				parent[other_pathogen] = [segment[1].segment_number]
+				parent[self].append(segments_to_choose_from[0].segment_number)
+			if i == 1:
+				parent[other].append(segments_to_choose_from[1].segment_number)
 		new_pathogen.parent = parent
 
 		new_pathogen.mutate()

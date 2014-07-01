@@ -182,10 +182,11 @@ class Simulator(object):
 
 			else:
 				for parent, segments in pathogen.parent.items():
-					weight = edge_levenshtein_distance(parent, pathogen, \
-						segments) 
+					if len(segments) != 0:
+						weight = edge_levenshtein_distance(parent, pathogen, \
+							segments) 
 
-					transmission_graph.add_edge(parent, pathogen, weight=weight, segments=segments)
+						transmission_graph.add_edge(parent, pathogen, weight=weight, segments=segments)
 
 			# Add an edge comprising of all segments if the progeny pathogen 
 			# was replicated from a single parent pathogen.
