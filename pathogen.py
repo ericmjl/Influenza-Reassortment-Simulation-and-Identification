@@ -177,7 +177,7 @@ class Pathogen(object):
 			segment.mutate()
 
 
-	### PATHOGEN PROPERTY METHODS ###
+	#################### PATHOGEN PROPERTY METHODS ############################
 	
 	def is_seed(self):
 		"""
