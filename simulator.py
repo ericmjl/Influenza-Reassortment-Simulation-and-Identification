@@ -27,6 +27,19 @@ class Simulator(object):
 				A list of pathogens currently present in the simulator. It is 
 				initialized to an empty list, and can be rest to an empty list 
 				using the reset() function.
+
+		-	NETWORKX DIGRAPH: transmission_graph
+				A Graph that stores the simulated transmission network. This 
+				network is constructed using the parent-progeny relationship 
+				stored in each virus.
+
+		-	NETWORKX DIGRAPH: relabeled_transmission_graph
+				Same as transmission_graph, but the nodes are now labeled with 
+				strings.
+
+		-	LIST of SETS: full_transmission_paths
+				A disjoint set data structure that stores all of the full 
+				transmission paths (involving all segments). 
 		"""
 		super(Simulator, self).__init__()
 		
@@ -38,7 +51,9 @@ class Simulator(object):
 
 		self.relabeled_transmission_graph = nx.DiGraph()
 
-		self.transmission_paths = []
+		self.full_transmission_paths = []
+
+		self.segment_graphs = dict()
 
 	def increment_timestep(self):
 		"""
@@ -286,12 +301,13 @@ class Simulator(object):
 		self.relabeled_transmission_graph = relabeled_transmission_graph
 		
 
-	def paths(self):
+	def identify_full_transmission_paths(self):
 		"""
-		This method will update and return the set of paths between all nodes 
-		present in the simulation. The exact structure is a disjoint set. We 
-		first create a singleton set for each node in the transmission graph. 
-		We then iterate over each edge and union the sets containing the nodes.
+		This method will update and return the set of full transmission paths 
+		between all nodes present in the simulation. The exact structure is a 
+		disjoint set. We first create a singleton set for each node in the 
+		transmission graph. We then iterate over each edge and union the sets 
+		containing the nodes.
 
 		NOTE: We are going to use the relabeled transmission graph in this 
 		case, rather than the original transmission graph, as this will yield 
@@ -310,32 +326,33 @@ class Simulator(object):
 			This method will return the set that contains the specified 
 			element.
 			"""
-
 			for path in paths:
 				if element in path:
 					return path
 
 		# Step 2: Iterate over all the edges. Find the sets that contain the 
 		# two nodes, and union them.
-		for edge in self.relabeled_transmission_graph.edges():
-			path1 = find_set_with_element(paths, edge[0])
-			path2 = find_set_with_element(paths, edge[1])
+		for edge in self.relabeled_transmission_graph.edges(data=True):
+			# This is the criteria that specifiees that the transmission paths 
+			# are "full".
+			if len(edge[2]['segments']) == 2:
+				path1 = find_set_with_element(paths, edge[0])
+				path2 = find_set_with_element(paths, edge[1])
 
-			if path1 != path2:
-				new_path = path1.union(path2)
+				if path1 != path2:
+					new_path = path1.union(path2)
 
-				paths.pop(paths.index(path1))
-				paths.pop(paths.index(path2))
-				paths.append(new_path)
+					paths.pop(paths.index(path1))
+					paths.pop(paths.index(path2))
+					paths.append(new_path)
 
-		# Step 3: Set the transmission_paths attribute to be the list of paths 
-		# that are present in the graph.
+		# Step 3: Set the full_transmission_paths attribute to be the list of 
+		# paths that are present in the graph.
+		self.full_transmission_paths = paths
 
-		self.transmission_paths = paths
+		return self.full_transmission_paths
 
-		return self.transmission_paths
-
-	def path_exists(self, node1, node2):
+	def transmission_path_exists(self, node1, node2):
 		"""
 		This method will return True if a path exists between two nodes.
 
@@ -351,7 +368,7 @@ class Simulator(object):
 		"""
 
 		boolean = False
-		paths = self.paths()
+		paths = self.identify_full_transmission_paths()
 		for path in paths:
 			if node1 in path and node2 in path:
 				boolean = True

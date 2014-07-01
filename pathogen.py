@@ -99,6 +99,14 @@ class Pathogen(object):
 				parent[self].append(segments_to_choose_from[0].segment_number)
 			if i == 1:
 				parent[other].append(segments_to_choose_from[1].segment_number)
+
+		# Clean the dictionary if the progeny is entirely derived from one 
+		# parent.
+		if parent[self] == []:
+			del parent[self]
+		if parent[other] == []:
+			del parent[other]
+
 		new_pathogen.parent = parent
 
 		new_pathogen.mutate()
