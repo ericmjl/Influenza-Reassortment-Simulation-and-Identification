@@ -31,15 +31,17 @@ class Simulator(object):
 		-	NETWORKX DIGRAPH: transmission_graph
 				A Graph that stores the simulated transmission network. This 
 				network is constructed using the parent-progeny relationship 
-				stored in each virus.
+				stored in each virus. It is initialized to None.
 
 		-	NETWORKX DIGRAPH: relabeled_transmission_graph
 				Same as transmission_graph, but the nodes are now labeled with 
-				strings.
+				strings. It is initialized to None.
 
-		-	LIST of SETS: full_transmission_paths
-				A disjoint set data structure that stores all of the full 
-				transmission paths (involving all segments). 
+		-	NETWORKX DIGRAPH: full_transmission_graph
+				Same as relabeled_transmission_graph, but the edges that 
+				describe reassortants are removed, so that only transmissions 
+				involving FULL set of segments are retained. It is initialized 
+				to None.
 		"""
 		super(Simulator, self).__init__()
 		
@@ -47,13 +49,11 @@ class Simulator(object):
 
 		self.pathogens = []
 
-		self.transmission_graph = nx.DiGraph()
+		self.transmission_graph = None
 
-		self.relabeled_transmission_graph = nx.DiGraph()
+		self.relabeled_transmission_graph = None
 
-		self.full_transmission_paths = []
-
-		self.segment_paths = dict()
+		self.full_transmission_graph = None
 
 	def increment_timestep(self):
 		"""
@@ -195,31 +195,19 @@ class Simulator(object):
 			if len(pathogen.parent) == 0:
 				pass
 
+			# Otherwise, add each edge with the weight.
 			else:
 				for parent, segments in pathogen.parent.items():
 					if len(segments) != 0:
 						weight = edge_levenshtein_distance(parent, pathogen, \
 							segments) 
 
-						transmission_graph.add_edge(parent, pathogen, weight=weight, segments=segments)
-
-			# Add an edge comprising of all segments if the progeny pathogen 
-			# was replicated from a single parent pathogen.
-			# if len(pathogen.parent) == 1:
-			# 	weight = isolate_levdist(pathogen.parent, pathogen)
-			# 	segments = pathogen.get_segment_numbers()
-			# 	transmission_graph.add_edge(pathogen.parent[0], pathogen, \
-			# 		weight=weight, segments=segments)
-
-			# Add an edge comprising the segment that was transmitted for each 
-			# parent pathogen.
-			# if len(pathogen.parent) == 2:
-			# 	transmission_graph.add_edge(pathogen.parent[0], pathogen, \
-			# 		weight=0.5)
-			# 	transmission_graph.add_edge(pathogen.parent[1], pathogen, \
-			# 		weight=0.5)
+						transmission_graph.add_edge(parent, pathogen, \
+							weight=weight, segments=segments)
 
 		self.transmission_graph = transmission_graph
+
+		return self.transmission_graph
 
 	def draw_transmission_graph(self, positions=False):
 		"""
@@ -233,8 +221,12 @@ class Simulator(object):
 				If True: nodes will be restricted in the x-axis.
 
 		"""
-		transmission_graph = self.transmission_graph
 
+		# Step 1: Guarantee that transmission_graph is made.
+		transmission_graph = self.generate_transmission_graph()
+
+		# Step 2: Draw the graph according to the time-restricted layout or 
+		# circular layout.
 		if positions == False:
 			nx.draw_circular(transmission_graph)
 
@@ -242,8 +234,8 @@ class Simulator(object):
 			positions = dict()
 			for pathogen in self.pathogens:
 				positions[pathogen] = (pathogen.creation_time, randint(0, 20))
-
 			nx.draw(transmission_graph, pos=positions)
+
 
 	def write_transmission_graph(self, outfile_name, folder_name=None):
 		"""
@@ -288,18 +280,57 @@ class Simulator(object):
 		attribute with the nodes relabeled as strings rather than pathogen 
 		objects. 
 		"""
+
+		# Call on generate_transmission_graph to guarantee that the graph is 
+		# created. 
+		transmission_graph = self.generate_transmission_graph()
+
 		# Create mapping from object to string
 		mapping = dict()
-		for node in self.transmission_graph.nodes():
+		for node in transmission_graph.nodes():
 			mapping[node] = str(node)
 
 		# Relabel the transmission graph in a copy of the transmission graph
 		relabeled_transmission_graph = nx.relabel_nodes(\
-			self.transmission_graph, mapping)
+			transmission_graph, mapping)
 
 		# Assign relabeled graph to self.relabeled_transmission_graph
 		self.relabeled_transmission_graph = relabeled_transmission_graph
-		
+
+		return self.relabeled_transmission_graph
+
+	def generate_full_transmission_graph(self):
+		"""
+		This method will generate the full transmission graph from the 
+		relabeled transmission graph. This is done by iterating over the edges 
+		present in the graph. If the progeny node in the edge is a 
+		reassortant, then remove the edge. Otherwise, pass.
+		"""
+
+		# Call on relabel_transmission_graph() to guarantee that the graph is 
+		# created. 
+		full_transmission_graph = self.relabel_transmission_graph()
+
+		# Identify the reassortants, and then recast them as a list of 
+		# strings, rather than a list of objects.
+		reassortants = self.identify_reassortants()
+		reassortants = [str(item) for item in reassortants]
+
+		for edge in full_transmission_graph.edges():
+			progeny = edge[1]
+
+			# This is the criteria for removal of an edge. If the progeny node 
+			# is a reassortant, then the edge is not a full transmission edge. 
+			# Therefore, the progeny node should not be in reassortant for the 
+			# edge to be kept. Otherwise, the edge is removed.
+			if progeny in reassortants:
+				full_transmission_graph.remove_edge(edge[0], edge[1])
+			else:
+				pass
+
+		self.full_transmission_graph = full_transmission_graph
+
+		return self.full_transmission_graph
 
 	def identify_full_transmission_paths(self):
 		"""
@@ -314,44 +345,13 @@ class Simulator(object):
 		a set of strings that can be compared with the reconstruction, which 
 		also uses strings as node labels.
 		"""
+		full_transmission_graph = self.generate_full_transmission_graph()
 
-		paths = identify_paths(self.relabeled_transmission_graph)
+		paths = identify_paths(self.full_transmission_graph)
 
-		self.full_transmission_paths = paths
-		
 		return paths
 
-		# # Step 1: Initialize singleton sets for each of the nodes in the 
-		# # transmission graph.
-		# paths = []
-		# for node in self.relabeled_transmission_graph.nodes():
-		# 	paths.append(set([node]))
-
-		
-
-		# # Step 2: Iterate over all the edges. Find the sets that contain the 
-		# # two nodes, and union them.
-		# for edge in self.relabeled_transmission_graph.edges(data=True):
-		# 	# This is the criteria that specifiees that the transmission paths 
-		# 	# are "full".
-		# 	if len(edge[2]['segments']) == 2:
-		# 		path1 = find_set_with_element(paths, edge[0])
-		# 		path2 = find_set_with_element(paths, edge[1])
-
-		# 		if path1 != path2:
-		# 			new_path = path1.union(path2)
-
-		# 			paths.pop(paths.index(path1))
-		# 			paths.pop(paths.index(path2))
-		# 			paths.append(new_path)
-
-		# # Step 3: Set the full_transmission_paths attribute to be the list of 
-		# # paths that are present in the graph.
-		# self.full_transmission_paths = paths
-
-		# return self.full_transmission_paths
-
-	def transmission_path_exists(self, node1, node2):
+	def full_transmission_path_exists(self, node1, node2):
 		"""
 		This method will return True if a full transmission path exists 
 		between two nodes.
@@ -379,6 +379,8 @@ class Simulator(object):
 	def identify_segment_paths(self):
 		"""
 		This method will identify the transmission paths for each segment. 
+
+		2 July 2014: This part of the code still has to be changed.
 		"""
 
 		segment_paths = dict()
@@ -433,7 +435,7 @@ def identify_paths(graph):
 
 	# Step 2: Iterate over all the edges. Find the sets that contain the 
 	# two nodes, and union them.
-	for edge in graph.edges():	
+	for edge in graph.edges():
 		path1 = find_set_with_element(paths, edge[0])
 		path2 = find_set_with_element(paths, edge[1])
 
