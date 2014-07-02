@@ -315,6 +315,12 @@ class Reconstructor(object):
 		return pruned
 		#################### END IMPORTANT LOGIC ##############################
 
+	def is_full_transmission_edge(self, edge):
+		if edge[2]['segments'] == self.segments:
+			return True
+		else:
+			return False
+
 	def reassortants(self):
 		"""
 		This method identifies the reassortant viruses that are present in the 

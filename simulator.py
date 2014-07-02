@@ -253,9 +253,8 @@ class Simulator(object):
 
 	def relabeled_transmission_graph(self):
 		"""
-		This method will assign the self.relabeled_transmission_graph 
-		attribute with the nodes relabeled as strings rather than pathogen 
-		objects. 
+		This method will return a relabeled_transmission_graph, with the nodes 
+		relabeled as strings rather than pathogen objects. 
 		"""
 
 		# Call on.transmission_graph to guarantee that the graph is 
