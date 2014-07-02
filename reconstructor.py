@@ -51,10 +51,6 @@ class Reconstructor(object):
 			self.sequences[segment] = []
 			self.graphs[segment] = nx.DiGraph()
 
-		self.composed_graph = nx.MultiDiGraph()
-
-		self.condensed_graph = nx.DiGraph()
-
 	def read_fasta_file(self, fasta_file, splitchar='|', pos_segment_num=1):
 		"""
 		This method takes in a FASTA file, and adds the sequences to the self.
@@ -212,53 +208,53 @@ class Reconstructor(object):
 						if edge[2]['weight'] != min_weight:
 							G.remove_edge(edge[0], edge[1])
 
-	def compose_segment_graphs(self):
+	def composed_graph(self):
 		"""
 		This method composes each of the segment transmission graphs into a 
 		single MultiDiGraph.
 		"""
-		composed_graph = nx.MultiDiGraph()
+		composed = nx.MultiDiGraph()
 
 		for segment in self.graphs:
 			G = self.graphs[segment]
 
-			composed_graph.add_nodes_from(G.nodes(data=True))
-			composed_graph.add_edges_from(G.edges(data=True))
+			composed.add_nodes_from(G.nodes(data=True))
+			composed.add_edges_from(G.edges(data=True))
 
-		self.composed_graph = composed_graph
+		return composed
 
-	def condense_composed_segment_graphs(self):
+	def condensed_graph(self):
 		"""
 		This method condenses the composed segment graphs into a single 
 		DiGraph that keeps track of the number of segments transmitted in each 
 		edge, while also summing up the weights.
 		"""
 
-		composed_graph = self.composed_graph
+		composed = self.composed_graph()
 
 		# Initialize the new graph
-		condensed_graph = nx.DiGraph()
-		condensed_graph.add_nodes_from(composed_graph.nodes(data=True))
+		condensed = nx.DiGraph()
+		condensed.add_nodes_from(composed.nodes(data=True))
 
 		# Initialize the edges dictionary
 		edges = dict()
-		for edge in composed_graph.edges(data=True):
+		for edge in composed.edges(data=True):
 			nodes = (edge[0], edge[1])
 			edges[nodes] = dict()
 			edges[nodes]['segments'] = []
 			edges[nodes]['weight'] = 0
 
 		# Condense the segments into a list, and sum up the weights.
-		for edge in composed_graph.edges(data=True):
+		for edge in composed.edges(data=True):
 			nodes = (edge[0], edge[1])
 			edges[nodes]['segments'].append(edge[2]['segment'])
 			edges[nodes]['weight'] += edge[2]['weight']
 
 		# Add the edges into the comdensed_graph.
 		for nodes, attributes in edges.items():
-			condensed_graph.add_edge(nodes[0], nodes[1], attr_dict=attributes)
+			condensed.add_edge(nodes[0], nodes[1], attr_dict=attributes)
 
-		self.condensed_graph = condensed_graph
+		return condensed
 
 	def prune_condensed_graph(self):
 		"""
@@ -295,13 +291,13 @@ class Reconstructor(object):
 
 
 		#################### BEGIN IMPORTANT LOGIC ############################
-		for node in self.condensed_graph.nodes(data=True):
-			in_edges = self.condensed_graph.in_edges(node[0], data=True)
+		for node in self.condensed_graph().nodes(data=True):
+			in_edges = self.condensed_graph().in_edges(node[0], data=True)
 			if has_at_least_one_full_transmission(in_edges): 
-				remove_non_full_transmission(self.condensed_graph, in_edges)
+				remove_non_full_transmission(self.condensed_graph(), in_edges)
 		#################### END IMPORTANT LOGIC ##############################
 
-	def identify_reassortants(self):
+	def reassortants(self):
 		"""
 		This method identifies the reassortant viruses that are present in the 
 		reconstruction. 
@@ -329,8 +325,8 @@ class Reconstructor(object):
 
 		reassortants = []
 
-		for node in self.condensed_graph.nodes(data=True):
-			in_edges = self.condensed_graph.in_edges(node[0], data=True)
+		for node in self.condensed_graph().nodes(data=True):
+			in_edges = self.condensed_graph().in_edges(node[0], data=True)
 
 			if len(in_edges) > 0 and \
 			has_no_full_transmissions(in_edges) == True:
@@ -338,7 +334,7 @@ class Reconstructor(object):
 
 		return reassortants
 
-
+	# def 
 
 
 

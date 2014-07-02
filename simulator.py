@@ -27,33 +27,12 @@ class Simulator(object):
 				A list of pathogens currently present in the simulator. It is 
 				initialized to an empty list, and can be rest to an empty list 
 				using the reset() function.
-
-		-	NETWORKX DIGRAPH: transmission_graph
-				A Graph that stores the simulated transmission network. This 
-				network is constructed using the parent-progeny relationship 
-				stored in each virus. It is initialized to None.
-
-		-	NETWORKX DIGRAPH: relabeled_transmission_graph
-				Same as transmission_graph, but the nodes are now labeled with 
-				strings. It is initialized to None.
-
-		-	NETWORKX DIGRAPH: full_transmission_graph
-				Same as relabeled_transmission_graph, but the edges that 
-				describe reassortants are removed, so that only transmissions 
-				involving FULL set of segments are retained. It is initialized 
-				to None.
 		"""
 		super(Simulator, self).__init__()
 		
 		self.current_time = 0
 
 		self.pathogens = []
-
-		self.transmission_graph = None
-
-		self.relabeled_transmission_graph = None
-
-		self.full_transmission_graph = None
 
 	def increment_timestep(self):
 		"""
@@ -138,7 +117,7 @@ class Simulator(object):
 		SeqIO.write(sequences, output_handle, 'fasta')
 		output_handle.close()
 
-	def generate_transmission_graph(self):
+	def transmission_graph(self):
 		"""
 		This method creates the ground truth transmission graph in memory.
 
@@ -205,9 +184,7 @@ class Simulator(object):
 						transmission_graph.add_edge(parent, pathogen, \
 							weight=weight, segments=segments)
 
-		self.transmission_graph = transmission_graph
-
-		return self.transmission_graph
+		return transmission_graph
 
 	def draw_transmission_graph(self, positions=False):
 		"""
@@ -223,7 +200,7 @@ class Simulator(object):
 		"""
 
 		# Step 1: Guarantee that transmission_graph is made.
-		transmission_graph = self.generate_transmission_graph()
+		transmission_graph = self.transmission_graph()
 
 		# Step 2: Draw the graph according to the time-restricted layout or 
 		# circular layout.
@@ -250,7 +227,7 @@ class Simulator(object):
 				The folder in which the networkX gpickle files are going to be 
 				stored
 		"""
-		transmission_graph = self.generate_transmission_graph()
+		transmission_graph = self.transmission_graph()
 
 		if folder_name == None:
 			output_handle = open('%s.gpickle' % outfile_name, 'w+')
@@ -261,7 +238,7 @@ class Simulator(object):
 
 		nx.write_gpickle(transmission_graph, output_handle)
 
-	def identify_reassortants(self):
+	def reassortants(self):
 		"""
 		This method will return the reassortant pathogens that are present in 
 		the simulation. The reassortant pathogens are identifiable using their 
@@ -274,16 +251,16 @@ class Simulator(object):
 
 		return reassortants
 
-	def relabel_transmission_graph(self):
+	def relabeled_transmission_graph(self):
 		"""
 		This method will assign the self.relabeled_transmission_graph 
 		attribute with the nodes relabeled as strings rather than pathogen 
 		objects. 
 		"""
 
-		# Call on generate_transmission_graph to guarantee that the graph is 
+		# Call on.transmission_graph to guarantee that the graph is 
 		# created. 
-		transmission_graph = self.generate_transmission_graph()
+		transmission_graph = self.transmission_graph()
 
 		# Create mapping from object to string
 		mapping = dict()
@@ -294,12 +271,9 @@ class Simulator(object):
 		relabeled_transmission_graph = nx.relabel_nodes(\
 			transmission_graph, mapping)
 
-		# Assign relabeled graph to self.relabeled_transmission_graph
-		self.relabeled_transmission_graph = relabeled_transmission_graph
+		return relabeled_transmission_graph
 
-		return self.relabeled_transmission_graph
-
-	def generate_full_transmission_graph(self):
+	def full_transmission_graph(self):
 		"""
 		This method will generate the full transmission graph from the 
 		relabeled transmission graph. This is done by iterating over the edges 
@@ -309,11 +283,11 @@ class Simulator(object):
 
 		# Call on relabel_transmission_graph() to guarantee that the graph is 
 		# created. 
-		full_transmission_graph = self.relabel_transmission_graph()
+		full_transmission_graph = self.relabeled_transmission_graph()
 
 		# Identify the reassortants, and then recast them as a list of 
 		# strings, rather than a list of objects.
-		reassortants = self.identify_reassortants()
+		reassortants = self.reassortants()
 		reassortants = [str(item) for item in reassortants]
 
 		for edge in full_transmission_graph.edges():
@@ -328,11 +302,9 @@ class Simulator(object):
 			else:
 				pass
 
-		self.full_transmission_graph = full_transmission_graph
+		return full_transmission_graph
 
-		return self.full_transmission_graph
-
-	def identify_full_transmission_paths(self):
+	def full_transmission_paths(self):
 		"""
 		This method will update and return the set of full transmission paths 
 		between all nodes present in the simulation. The exact structure is a 
@@ -345,9 +317,9 @@ class Simulator(object):
 		a set of strings that can be compared with the reconstruction, which 
 		also uses strings as node labels.
 		"""
-		full_transmission_graph = self.generate_full_transmission_graph()
+		full_transmission_graph = self.full_transmission_graph()
 
-		paths = identify_paths(self.full_transmission_graph)
+		paths = identify_paths(full_transmission_graph)
 
 		return paths
 
@@ -368,7 +340,7 @@ class Simulator(object):
 		"""
 
 		boolean = False
-		paths = self.identify_full_transmission_paths()
+		paths = self.full_transmission_paths()
 		for path in paths:
 			if node1 in path and node2 in path:
 				boolean = True
@@ -376,34 +348,37 @@ class Simulator(object):
 
 		return boolean
 
-	def identify_segment_paths(self):
-		"""
-		This method will identify the transmission paths for each segment. 
 
-		2 July 2014: This part of the code still has to be changed.
-		"""
 
-		segment_paths = dict()
 
-		# Step 1: Initialize the dictionary with such that the keys are the 
-		# segment numbers of the pathogens being considered.
-		segment_numbers = set()
-		for pathogen in self.transmission_graph.nodes():
-			for segment in pathogen.segments:
-				segment_numbers.add(segment.segment_number)
+	# def identify_segment_paths(self):
+	# 	"""
+	# 	This method will identify the transmission paths for each segment. 
 
-		for number in segment_numbers:
-			segment_paths[number] = []
+	# 	2 July 2014: This part of the code still has to be changed.
+	# 	"""
 
-		# Step 2: For each segment, add nodes to the graph.
-		for node in self.relabeled_transmission_graph.nodes():
-			for number in segment_numbers:
-				segment_numbers[number].append(set([node]))
+	# 	segment_paths = dict()
 
-		# Step 3: Union-Find all of the paths.
-		for edge in self.relabeled_transmission_graph.edges(data=True):
-			# path1 = 
-			pass
+	# 	# Step 1: Initialize the dictionary with such that the keys are the 
+	# 	# segment numbers of the pathogens being considered.
+	# 	segment_numbers = set()
+	# 	for pathogen in self.transmission_graph.nodes():
+	# 		for segment in pathogen.segments:
+	# 			segment_numbers.add(segment.segment_number)
+
+	# 	for number in segment_numbers:
+	# 		segment_paths[number] = []
+
+	# 	# Step 2: For each segment, add nodes to the graph.
+	# 	for node in self.relabeled_transmission_graph.nodes():
+	# 		for number in segment_numbers:
+	# 			segment_numbers[number].append(set([node]))
+
+	# 	# Step 3: Union-Find all of the paths.
+	# 	for edge in self.relabeled_transmission_graph.edges(data=True):
+	# 		# path1 = 
+	# 		pass
 
 
 
