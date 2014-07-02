@@ -371,7 +371,7 @@ class Simulator(object):
 		seg_graph = self.relabeled_transmission_graph()
 
 		for edge in seg_graph.edges(data=True):
-			if segment not in edge[2]['segment']:
+			if segment not in edge[2]['segments']:
 				seg_graph.remove_edge(edge[0], edge[1])
 
 		return seg_graph

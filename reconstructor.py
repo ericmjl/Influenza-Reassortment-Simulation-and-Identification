@@ -175,6 +175,8 @@ class Reconstructor(object):
 		the Levenshtein distance between two sequences.
 		"""
 
+		self.add_nodes_with_data()
+
 		for segment in self.graphs:
 			G = self.graphs[segment]
 
@@ -212,7 +214,10 @@ class Reconstructor(object):
 		"""
 		This method composes each of the segment transmission graphs into a 
 		single MultiDiGraph.
+
+		OUTPUTS:
 		"""
+
 		composed = nx.MultiDiGraph()
 
 		for segment in self.graphs:
@@ -228,6 +233,12 @@ class Reconstructor(object):
 		This method condenses the composed segment graphs into a single 
 		DiGraph that keeps track of the number of segments transmitted in each 
 		edge, while also summing up the weights.
+
+		OUTPUTS:
+		-	NETWORKX DIGRPH: condensed
+				A DiGraph constructed from the composed MultiDiGraph, in which 
+				each edge captures the segments that have been transmitted 
+				between two viruses.
 		"""
 
 		composed = self.composed_graph()
@@ -264,6 +275,10 @@ class Reconstructor(object):
 
 		To keep the code logic readable and compact, two helper functions have 
 		been defined.
+
+		OUTPUTS:
+		-	NETWORKX DIGRAPH: pruned 
+				A DiGraph of the pruned condensed graph, in which the full transmission edges are kept preferentially over the partial (non-full) transmission edges. 
 		"""
 
 		#################### BEGIN HELPER FUNCTIONS ###########################
@@ -308,6 +323,10 @@ class Reconstructor(object):
 		The reassortant viruses are the viruses that do not have full 
 		transmissions going into it. We use the helper function defined at the 
 		bottom of this file.
+
+		OUTPUTS:
+		-	LIST: reassortants
+				A list of reassortants present in the graph.
 		"""
 
 		#################### BEGIN HELPER FUNCITON ############################
@@ -317,6 +336,11 @@ class Reconstructor(object):
 			defined above, this function returns True if there are no full 
 			transmissions present. As usual, this helper function is defined 
 			to keep the main code readable and compact.
+
+			OUTPUTS:
+			-	BOOLEAN: boolean 
+					A boolean variable that tells us whether a full 
+					transmission exists within the set of the given in_edges.
 			"""
 			boolean = True
 			for edge in in_edges:
@@ -333,7 +357,7 @@ class Reconstructor(object):
 
 			if len(in_edges) > 0 and \
 			has_no_full_transmissions(in_edges) == True:
-				reassortants.append(node)
+				reassortants.append(node[0])
 
 		return reassortants
 
@@ -363,10 +387,6 @@ class Reconstructor(object):
 				seg_graph.remove_edge(edge[0], edge[1])
 
 		return seg_graph
-
-#################### BEGIN HELPER FUNCTIONS ###################################
-
-
 
 
 
