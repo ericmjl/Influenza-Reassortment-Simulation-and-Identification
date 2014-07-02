@@ -12,7 +12,8 @@ import networkx as nx
 class Reconstructor(object):
 	"""
 	The Reconstructor class holds the composable methods for reconstructing 
-	networks from genetic information."""
+	networks from genetic information.
+	"""
 	def __init__(self, segments):
 		"""
 		The Reconstructor class allows us the flexibility to test different 
@@ -34,12 +35,6 @@ class Reconstructor(object):
 
 		-	LIST: graphs
 				A list of the graphs that are present.
-
-		-	NETWORKX MULTIDIGRAPH: composed_graph
-				A MultiDiGraph object that stores the composed segment graphs.
-
-		-	NETWORKX DIGRAPH: condensed_graph
-				A DiGraph object that stores the condensed segment graphs.
 		"""
 		super(Reconstructor, self).__init__()
 		
@@ -216,6 +211,8 @@ class Reconstructor(object):
 		single MultiDiGraph.
 
 		OUTPUTS:
+		-	NETWORKX MULTIDIGRAPH: composed 
+				The composed graph.
 		"""
 
 		composed = nx.MultiDiGraph()
@@ -280,7 +277,6 @@ class Reconstructor(object):
 		-	NETWORKX DIGRAPH: pruned 
 				A DiGraph of the pruned condensed graph, in which the full transmission edges are kept preferentially over the partial (non-full) transmission edges. 
 		"""
-
 		#################### BEGIN HELPER FUNCTIONS ###########################
 		def has_at_least_one_full_transmission(in_edges):
 			"""
@@ -316,6 +312,13 @@ class Reconstructor(object):
 		#################### END IMPORTANT LOGIC ##############################
 
 	def is_full_transmission_edge(self, edge):
+		"""
+		This method will tell us whether an edge is a full transmission edge 
+		or not.
+
+		OUTPUTS:
+		-	BOOLEAN: whether the edge is a full transmission edge or not.
+		"""
 		if edge[2]['segments'] == self.segments:
 			return True
 		else:
@@ -334,7 +337,6 @@ class Reconstructor(object):
 		-	LIST: reassortants
 				A list of reassortants present in the graph.
 		"""
-
 		#################### BEGIN HELPER FUNCITON ############################
 		def has_no_full_transmissions(in_edges):
 			"""
