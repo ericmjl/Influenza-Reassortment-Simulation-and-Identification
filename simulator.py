@@ -315,35 +315,41 @@ class Simulator(object):
 		also uses strings as node labels.
 		"""
 
-		# Step 1: Initialize singleton sets for each of the nodes in the 
-		# transmission graph.
-		paths = []
-		for node in self.relabeled_transmission_graph.nodes():
-			paths.append(set([node]))
+		paths = identify_paths(self.relabeled_transmission_graph)
+
+		self.full_transmission_paths = paths
+		
+		return paths
+
+		# # Step 1: Initialize singleton sets for each of the nodes in the 
+		# # transmission graph.
+		# paths = []
+		# for node in self.relabeled_transmission_graph.nodes():
+		# 	paths.append(set([node]))
 
 		
 
-		# Step 2: Iterate over all the edges. Find the sets that contain the 
-		# two nodes, and union them.
-		for edge in self.relabeled_transmission_graph.edges(data=True):
-			# This is the criteria that specifiees that the transmission paths 
-			# are "full".
-			if len(edge[2]['segments']) == 2:
-				path1 = find_set_with_element(paths, edge[0])
-				path2 = find_set_with_element(paths, edge[1])
+		# # Step 2: Iterate over all the edges. Find the sets that contain the 
+		# # two nodes, and union them.
+		# for edge in self.relabeled_transmission_graph.edges(data=True):
+		# 	# This is the criteria that specifiees that the transmission paths 
+		# 	# are "full".
+		# 	if len(edge[2]['segments']) == 2:
+		# 		path1 = find_set_with_element(paths, edge[0])
+		# 		path2 = find_set_with_element(paths, edge[1])
 
-				if path1 != path2:
-					new_path = path1.union(path2)
+		# 		if path1 != path2:
+		# 			new_path = path1.union(path2)
 
-					paths.pop(paths.index(path1))
-					paths.pop(paths.index(path2))
-					paths.append(new_path)
+		# 			paths.pop(paths.index(path1))
+		# 			paths.pop(paths.index(path2))
+		# 			paths.append(new_path)
 
-		# Step 3: Set the full_transmission_paths attribute to be the list of 
-		# paths that are present in the graph.
-		self.full_transmission_paths = paths
+		# # Step 3: Set the full_transmission_paths attribute to be the list of 
+		# # paths that are present in the graph.
+		# self.full_transmission_paths = paths
 
-		return self.full_transmission_paths
+		# return self.full_transmission_paths
 
 	def transmission_path_exists(self, node1, node2):
 		"""
@@ -401,23 +407,67 @@ class Simulator(object):
 
 
 
+#################### BEGIN HELPER METHODS FOR PATH FINDING ####################
+def identify_paths(graph):
+	"""
+	This method takes in a graph and returns a list of sets that identify 
+	which nodes have a path between them.
+
+	INPUTS:
+	-	NETWORKX GRAPH: graph
+			The graph on which paths are to be found.
+
+	OUTPUTS:
+	-	LIST of SETS: paths
+			A list of sets in which nodes that are within the same set have a 
+			path between them.
+	"""
+	
+	paths = []
+
+	# Step 1: Initialize singleton sets for each of the nodes in the 
+	# transmission graph.
+	for node in graph.nodes():
+		paths.append(set([node]))
 
 
+	# Step 2: Iterate over all the edges. Find the sets that contain the 
+	# two nodes, and union them.
+	for edge in graph.edges():	
+		path1 = find_set_with_element(paths, edge[0])
+		path2 = find_set_with_element(paths, edge[1])
 
+		if path1 != path2:
+			new_path = path1.union(path2)
 
+			paths.pop(paths.index(path1))
+			paths.pop(paths.index(path2))
+			paths.append(new_path)
 
+	return paths
 
 def find_set_with_element(paths, element):
 	"""
 	This method will return the set that contains the specified 
 	element.
+
+	INPUTS:
+	-	LIST of SETS: paths 
+			A list of sets in which nodes that are within the same set have a 
+			path between them.
+
+	-	NODE: element 
+			A node within a NetworkX graph.
+
+	OUTPUTS:
+	-	SET: path
+			The set of nodes that are connected with each other that contains 
+			the query node 'element'.
 	"""
 	for path in paths:
 		if element in path:
 			return path
-
-
-
+#################### END HELPER METHODS FOR PATH FINDING ######################
 
 
 
