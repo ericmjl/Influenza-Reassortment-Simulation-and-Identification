@@ -268,10 +268,10 @@ class Simulator(object):
 			mapping[node] = str(node)
 
 		# Relabel the transmission graph in a copy of the transmission graph
-		relabeled_transmission_graph = nx.relabel_nodes(\
+		relabeled = nx.relabel_nodes(\
 			transmission_graph, mapping)
 
-		return relabeled_transmission_graph
+		return relabeled
 
 	def full_transmission_graph(self):
 		"""
@@ -283,14 +283,14 @@ class Simulator(object):
 
 		# Call on relabel_transmission_graph() to guarantee that the graph is 
 		# created. 
-		full_transmission_graph = self.relabeled_transmission_graph()
+		full_graph = self.relabeled_transmission_graph()
 
 		# Identify the reassortants, and then recast them as a list of 
 		# strings, rather than a list of objects.
 		reassortants = self.reassortants()
 		reassortants = [str(item) for item in reassortants]
 
-		for edge in full_transmission_graph.edges():
+		for edge in full_graph.edges():
 			progeny = edge[1]
 
 			# This is the criteria for removal of an edge. If the progeny node 
@@ -298,11 +298,11 @@ class Simulator(object):
 			# Therefore, the progeny node should not be in reassortant for the 
 			# edge to be kept. Otherwise, the edge is removed.
 			if progeny in reassortants:
-				full_transmission_graph.remove_edge(edge[0], edge[1])
+				full_graph.remove_edge(edge[0], edge[1])
 			else:
 				pass
 
-		return full_transmission_graph
+		return full_graph
 
 	def full_transmission_paths(self):
 		"""
@@ -316,10 +316,15 @@ class Simulator(object):
 		case, rather than the original transmission graph, as this will yield 
 		a set of strings that can be compared with the reconstruction, which 
 		also uses strings as node labels.
-		"""
-		full_transmission_graph = self.full_transmission_graph()
 
-		paths = identify_paths(full_transmission_graph)
+		OUTPUTS:
+		-	LIST of SETS: paths
+				A list of disjoint sets, for which in each set, a path exists 
+				between each of the nodes.
+		"""
+		full_graph = self.full_transmission_graph()
+
+		paths = identify_paths(full_graph)
 
 		return paths
 
@@ -341,6 +346,80 @@ class Simulator(object):
 
 		boolean = False
 		paths = self.full_transmission_paths()
+		for path in paths:
+			if node1 in path and node2 in path:
+				boolean = True
+				break
+
+		return boolean
+
+	def segment_transmission_graph(self, segment):
+		"""
+		This method will iterate over all of the edges in the relabeled 
+		transmission graph, and if the edge's segment attribute does not 
+		contian the segment specified, then the edge will be removed.
+
+		INPUTS:
+		-	INTEGER: segment 
+				The segment number for which we want the segment transmission 
+				graph.
+
+		OUTPUTS:
+		-	NETWORKX DIGRAPH: seg_graph
+				The segment transmission graph.
+		"""
+		seg_graph = self.relabeled_transmission_graph()
+
+		for edge in seg_graph.edges(data=True):
+			if segment not in edge[2]['segment']:
+				seg_graph.remove_edge(edge[0], edge[1])
+
+		return seg_graph
+
+	def segment_transmission_paths(self, segment):
+		"""
+		This method will return the segment transmission paths for a specified 
+		segment.
+
+		INPUTS:
+		-	INTEGER: segment 
+				An integer that specifies the segment for which the 
+				transmission paths are to be found.
+
+		OUTPUTS:
+		-	LIST of SETS: paths
+				A list of disjoint sets that describes which nodes are 
+				connected by paths.
+		"""
+
+		seg_graph = self.segment_transmission_graph(segment=segment)
+
+		paths = identify_paths(seg_graph)
+
+		return paths
+
+	def segment_transmission_path_exists(self, node1, node2, segment):
+		"""
+		This method will return True if a full transmission path exists 
+		between two nodes.
+
+		INPUTS:
+		-	STRING: node1, node2
+				The nodes that we are using for path identification are 
+				strings. Therefore, node1 and node2 are strings. They are the 
+				labels of the nodes present in the graph.
+
+		-	INTEGER: segment
+				The segment number for which we want to know the segment 
+				transmission path.
+
+		OUTPUTS:
+		-	BOOLEAN result that tells us if a path exists between the two 
+			nodes.
+		"""
+
+		boolean = False
+		paths = self.segment_transmission_paths(segment=segment)
 		for path in paths:
 			if node1 in path and node2 in path:
 				boolean = True

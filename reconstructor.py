@@ -256,7 +256,7 @@ class Reconstructor(object):
 
 		return condensed
 
-	def prune_condensed_graph(self):
+	def pruned_condensed_graph(self):
 		"""
 		This method prunes the condensed graph such that if a node has a "full 
 		transmission" edge into it, we will remove edges that have fewer than 
@@ -289,12 +289,15 @@ class Reconstructor(object):
 					graph.remove_edge(edge[0], edge[1])
 		#################### END HELPER FUNCTIONS #############################
 
-
 		#################### BEGIN IMPORTANT LOGIC ############################
-		for node in self.condensed_graph().nodes(data=True):
-			in_edges = self.condensed_graph().in_edges(node[0], data=True)
+		pruned = self.condensed_graph()
+
+		for node in pruned.nodes(data=True):
+			in_edges = pruned.in_edges(node[0], data=True)
 			if has_at_least_one_full_transmission(in_edges): 
-				remove_non_full_transmission(self.condensed_graph(), in_edges)
+				remove_non_full_transmission(pruned, in_edges)
+
+		return pruned
 		#################### END IMPORTANT LOGIC ##############################
 
 	def reassortants(self):
@@ -334,7 +337,35 @@ class Reconstructor(object):
 
 		return reassortants
 
-	# def 
+	def full_transmission_graph(self):
+		"""
+		This method will return only the full transmissions in the 
+		condensed graph.
+		"""
+		full_graph = self.pruned_condensed_graph()
+		for edge in full_graph.edges(data=True):
+			if set(edge[2]['segments']) != set(self.segments):
+				full_graph.remove_edge(edge[0], edge[1])
+
+		return full_graph
+
+	def segment_transmission_graph(self, segment):
+		"""
+		This method will return only the sepcified segment transmission graph 
+		in the condensed graph. The way this is done is by removing edges that 
+		do not contain the specified segment.
+		"""
+
+		seg_graph = self.pruned_condensed_graph()
+
+		for edge in seg_graph.edges(data=True):
+			if segment not in edge[2]['segments']:
+				seg_graph.remove_edge(edge[0], edge[1])
+
+		return seg_graph
+
+#################### BEGIN HELPER FUNCTIONS ###################################
+
 
 
 
