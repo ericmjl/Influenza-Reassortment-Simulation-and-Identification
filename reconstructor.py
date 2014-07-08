@@ -6,6 +6,7 @@ Affiliation: Massachusetts Institute of Technology
 from Levenshtein import distance
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
+from copy import copy
 
 import networkx as nx
 
@@ -179,7 +180,8 @@ class Reconstructor(object):
 
 			for source in G.nodes(data=True):
 				for sink in G.nodes(data=True):
-					if int(source[1]['creation_time']) < int(sink[1]['creation_time']):
+					if int(source[1]['creation_time']) < \
+					int(sink[1]['creation_time']):
 						weight = distance(source[1][sequence], \
 							sink[1][sequence])
 						G.add_edge(source[0], sink[0], weight=weight, \
@@ -275,7 +277,9 @@ class Reconstructor(object):
 
 		OUTPUTS:
 		-	NETWORKX DIGRAPH: pruned 
-				A DiGraph of the pruned condensed graph, in which the full transmission edges are kept preferentially over the partial (non-full) transmission edges. 
+				A DiGraph of the pruned condensed graph, in which the full 
+				transmission edges are kept preferentially over the partial 
+				(non-full) transmission edges. 
 		"""
 		#################### BEGIN HELPER FUNCTIONS ###########################
 		def has_at_least_one_full_transmission(in_edges):
@@ -324,7 +328,7 @@ class Reconstructor(object):
 		else:
 			return False
 
-	def reassortants(self):
+	def reassortants(self, reconstruction_type='reconstruction'):
 		"""
 		This method identifies the reassortant viruses that are present in the 
 		reconstruction. 
@@ -332,6 +336,15 @@ class Reconstructor(object):
 		The reassortant viruses are the viruses that do not have full 
 		transmissions going into it. We use the helper function defined at the 
 		bottom of this file.
+
+		INPUTS:
+		-	STRING: reconstruction_type
+				A string specifying the type of reconstructin that we want to 
+				evaluate accuracy for. Currently, we allow:
+					-	'reconstruction': the best reconstruction possible
+					-	'reassigned_source': a shuffled version of the 
+						reconstruction, in which the sources for each node 
+						that has an in_edge is reassigned at random.
 
 		OUTPUTS:
 		-	LIST: reassortants
@@ -360,8 +373,13 @@ class Reconstructor(object):
 
 		reassortants = []
 
-		for node in self.condensed_graph().nodes(data=True):
-			in_edges = self.condensed_graph().in_edges(node[0], data=True)
+		if reconstruction_type == "reconstruction":
+			graph = self.pruned_condensed_graph()
+		if reconstruction_type == "reassigned_source":
+			graph = self.reassigned_source_graph()
+
+		for node in graph.nodes(data=True):
+			in_edges = graph.in_edges(node[0], data=True)
 
 			if len(in_edges) > 0 and \
 			has_no_full_transmissions(in_edges) == True:
@@ -395,6 +413,61 @@ class Reconstructor(object):
 				seg_graph.remove_edge(edge[0], edge[1])
 
 		return seg_graph
+	
+	def reassigned_source_graph(self):
+		"""
+		This method takes in a graph, in which the edges are permuted. The 
+		specific implementation here is that we iterate over all the edges, 
+		and randomly select another source node that occurs before the sink 
+		node.
+
+		INPUTS:
+		-	NETWORKX GRAPH: graph
+				The graph on which the sources are to be randomly reassigned.
+
+		OUTPUTS: 
+		-	NETWORKX GRAPH: reassigned
+				The graph where the sources are randomly reassigned.
+		"""
+		new_graph = copy(self.pruned_condensed_graph())
+
+		edges = new_graph.edges(data=True)
+		nodes = new_graph.nodes(data=True)
+
+		#################### BEGIN HELPER FUNCTIONS ###########################
+		def get_new_source(graph, node):
+			"""
+			This method takes in a list of nodes and a sink node, and returns 
+			a new source node in which the new node is chosen from the list of 
+			nodes that have a creation_time prior to the sink node.
+			"""
+			from random import choice 
+
+			node_data = graph.node[node]
+
+			node_list = graph.nodes(data=True)
+			candidate_sources = []
+
+			for candidate in node_list:
+				if int(candidate[1]['creation_time']) < \
+				int(node_data['creation_time']):
+					candidate_sources.append(candidate)
+
+			new_source = choice(candidate_sources)
+			# print new_source[0]
+			return new_source[0] # return the node label only
+
+		#################### BEGIN HELPER FUNCTIONS ###########################
+
+		for edge in edges:
+			# print edge
+			sink_node = edge[1]
+			new_source = get_new_source(new_graph, sink_node)
+
+			new_graph.add_edge(new_source, edge[1], attr_dict=edge[2])
+			new_graph.remove_edge(edge[0], edge[1])
+
+		return new_graph
 
 
 

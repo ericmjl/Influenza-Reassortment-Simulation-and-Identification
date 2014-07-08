@@ -54,9 +54,11 @@ class Pathogen(object):
 		# self.convenient_id = self.id[0:5]
 
 		self.progeny_size = progeny_size
+		
 
 	def __repr__(self):
 		return self.id[0:5]
+
 
 	def reassort_with(self, other, current_time): 
 		"""
