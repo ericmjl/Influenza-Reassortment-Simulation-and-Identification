@@ -251,6 +251,13 @@ class Simulator(object):
 
 		return reassortants
 
+	def reassortant_edges(self):
+		"""
+		This method will return the edges that connect to reassortants as a list.
+		"""
+
+		pass
+
 	def relabeled_transmission_graph(self):
 		"""
 		This method will return a relabeled_transmission_graph, with the nodes 
