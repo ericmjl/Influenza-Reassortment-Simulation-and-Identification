@@ -36,6 +36,10 @@ class Reconstructor(object):
 
 		-	LIST: graphs
 				A list of the graphs that are present.
+
+		-	NETWORKX GRAPH: _reassigned_source_graph
+				The reassigned source graph that serves as the Null Model 
+				reconstruction for statistics.
 		"""
 		super(Reconstructor, self).__init__()
 		
@@ -46,6 +50,10 @@ class Reconstructor(object):
 		for segment in segments:
 			self.sequences[segment] = []
 			self.graphs[segment] = nx.DiGraph()
+
+		self._reassigned_source_graph = None
+		self._condensed_graph = None
+		self._pruned_condensed_graph = None
 
 	def read_fasta_file(self, fasta_file, splitchar='|', pos_segment_num=1):
 		"""
@@ -227,6 +235,7 @@ class Reconstructor(object):
 
 		return composed
 
+	@property
 	def condensed_graph(self):
 		"""
 		This method condenses the composed segment graphs into a single 
@@ -240,32 +249,36 @@ class Reconstructor(object):
 				between two viruses.
 		"""
 
-		composed = self.composed_graph()
+		if self._condensed_graph == None:
+			composed = self.composed_graph()
 
-		# Initialize the new graph
-		condensed = nx.DiGraph()
-		condensed.add_nodes_from(composed.nodes(data=True))
+			# Initialize the new graph
+			condensed = nx.DiGraph()
+			condensed.add_nodes_from(composed.nodes(data=True))
 
-		# Initialize the edges dictionary
-		edges = dict()
-		for edge in composed.edges(data=True):
-			nodes = (edge[0], edge[1])
-			edges[nodes] = dict()
-			edges[nodes]['segments'] = []
-			edges[nodes]['weight'] = 0
+			# Initialize the edges dictionary
+			edges = dict()
+			for edge in composed.edges(data=True):
+				nodes = (edge[0], edge[1])
+				edges[nodes] = dict()
+				edges[nodes]['segments'] = []
+				edges[nodes]['weight'] = 0
 
-		# Condense the segments into a list, and sum up the weights.
-		for edge in composed.edges(data=True):
-			nodes = (edge[0], edge[1])
-			edges[nodes]['segments'].append(edge[2]['segment'])
-			edges[nodes]['weight'] += edge[2]['weight']
+			# Condense the segments into a list, and sum up the weights.
+			for edge in composed.edges(data=True):
+				nodes = (edge[0], edge[1])
+				edges[nodes]['segments'].append(edge[2]['segment'])
+				edges[nodes]['weight'] += edge[2]['weight']
 
-		# Add the edges into the comdensed_graph.
-		for nodes, attributes in edges.items():
-			condensed.add_edge(nodes[0], nodes[1], attr_dict=attributes)
+			# Add the edges into the comdensed_graph.
+			for nodes, attributes in edges.items():
+				condensed.add_edge(nodes[0], nodes[1], attr_dict=attributes)
 
-		return condensed
+			self._condensed_graph = condensed
 
+		return self._condensed_graph
+
+	@property
 	def pruned_condensed_graph(self):
 		"""
 		This method prunes the condensed graph such that if a node has a "full 
@@ -305,14 +318,18 @@ class Reconstructor(object):
 		#################### END HELPER FUNCTIONS #############################
 
 		#################### BEGIN IMPORTANT LOGIC ############################
-		pruned = self.condensed_graph()
+		
+		if self._pruned_condensed_graph == None:
+			pruned = self.condensed_graph
 
-		for node in pruned.nodes(data=True):
-			in_edges = pruned.in_edges(node[0], data=True)
-			if has_at_least_one_full_transmission(in_edges): 
-				remove_non_full_transmission(pruned, in_edges)
+			for node in pruned.nodes(data=True):
+				in_edges = pruned.in_edges(node[0], data=True)
+				if has_at_least_one_full_transmission(in_edges): 
+					remove_non_full_transmission(pruned, in_edges)
 
-		return pruned
+			self._pruned_condensed_graph = pruned
+
+		return self._pruned_condensed_graph
 		#################### END IMPORTANT LOGIC ##############################
 
 	def is_full_transmission_edge(self, edge):
@@ -374,25 +391,56 @@ class Reconstructor(object):
 		reassortants = []
 
 		if reconstruction_type == "reconstruction":
-			graph = self.pruned_condensed_graph()
+			graph = self.pruned_condensed_graph
 		if reconstruction_type == "reassigned_source":
-			graph = self.reassigned_source_graph()
+			graph = self.reassigned_source_graph
 
 		for node in graph.nodes(data=True):
 			in_edges = graph.in_edges(node[0], data=True)
 
-			if len(in_edges) > 0 and \
-			has_no_full_transmissions(in_edges) == True:
+			if len(in_edges) > 0 and has_no_full_transmissions(in_edges) == True:
 				reassortants.append(node[0])
 
 		return reassortants
 
+	def reassortant_edges(self, reconstruction_type='reconstruction'):
+		"""
+		This method identifies the edges that are associated with the 
+		reassortant viruses present in the reconstructions.
+
+		INPUTS:
+		-	STRING: reconstruction_type
+				A string specifying the type of reconstructin that we want to 
+				evaluate accuracy for. See reassortants() for the description.
+
+		OUTPUTS:
+		-	LIST: edges
+				A list of edges that are associated with each of the 
+				reassortant viruses.
+		"""
+
+		edges = []
+
+		reassortants = self.reassortants(reconstruction_type=reconstruction_type)
+
+		if reconstruction_type == "reconstruction":
+			graph = self.pruned_condensed_graph
+		if reconstruction_type == "reassigned_source":
+			graph = self.reassigned_source_graph
+
+		for node in reassortants:
+			in_edges = graph.in_edges(node)
+			edges.extend(in_edges)
+
+		return edges
+
+	@property
 	def full_transmission_graph(self):
 		"""
 		This method will return only the full transmissions in the 
 		condensed graph.
 		"""
-		full_graph = self.pruned_condensed_graph()
+		full_graph = self.pruned_condensed_graph
 		for edge in full_graph.edges(data=True):
 			if set(edge[2]['segments']) != set(self.segments):
 				full_graph.remove_edge(edge[0], edge[1])
@@ -406,14 +454,15 @@ class Reconstructor(object):
 		do not contain the specified segment.
 		"""
 
-		seg_graph = self.pruned_condensed_graph()
+		seg_graph = self.pruned_condensed_graph
 
 		for edge in seg_graph.edges(data=True):
 			if segment not in edge[2]['segments']:
 				seg_graph.remove_edge(edge[0], edge[1])
 
 		return seg_graph
-	
+
+	@property
 	def reassigned_source_graph(self):
 		"""
 		This method takes in a graph, in which the edges are permuted. The 
@@ -429,45 +478,50 @@ class Reconstructor(object):
 		-	NETWORKX GRAPH: reassigned
 				The graph where the sources are randomly reassigned.
 		"""
-		new_graph = copy(self.pruned_condensed_graph())
+		from copy import deepcopy
+		if self._reassigned_source_graph == None:
 
-		edges = new_graph.edges(data=True)
-		nodes = new_graph.nodes(data=True)
+			new_graph = deepcopy(self.pruned_condensed_graph)
 
-		#################### BEGIN HELPER FUNCTIONS ###########################
-		def get_new_source(graph, node):
-			"""
-			This method takes in a list of nodes and a sink node, and returns 
-			a new source node in which the new node is chosen from the list of 
-			nodes that have a creation_time prior to the sink node.
-			"""
-			from random import choice 
+			edges = new_graph.edges(data=True)
+			nodes = new_graph.nodes(data=True)
 
-			node_data = graph.node[node]
+			#################### BEGIN HELPER FUNCTIONS #######################
+			def get_new_source(graph, node):
+				"""
+				This method takes in a list of nodes and a sink node, and 
+				returns a new source node in which the new node is chosen from 
+				the list of nodes that have a creation_time prior to the sink 
+				node.
+				"""
+				from random import choice 
 
-			node_list = graph.nodes(data=True)
-			candidate_sources = []
+				node_data = graph.node[node]
 
-			for candidate in node_list:
-				if int(candidate[1]['creation_time']) < \
-				int(node_data['creation_time']):
-					candidate_sources.append(candidate)
+				node_list = graph.nodes(data=True)
+				candidate_sources = []
 
-			new_source = choice(candidate_sources)
-			# print new_source[0]
-			return new_source[0] # return the node label only
+				for candidate in node_list:
+					if int(candidate[1]['creation_time']) < int(node_data['creation_time']):
+						candidate_sources.append(candidate)
 
-		#################### BEGIN HELPER FUNCTIONS ###########################
+				new_source = choice(candidate_sources)
+				# print new_source[0]
+				return new_source[0] # return the node label only
 
-		for edge in edges:
-			# print edge
-			sink_node = edge[1]
-			new_source = get_new_source(new_graph, sink_node)
+			#################### BEGIN HELPER FUNCTIONS #######################
 
-			new_graph.add_edge(new_source, edge[1], attr_dict=edge[2])
-			new_graph.remove_edge(edge[0], edge[1])
+			for edge in edges:
+				# print edge
+				sink_node = edge[1]
+				new_source = get_new_source(new_graph, sink_node)
 
-		return new_graph
+				new_graph.add_edge(new_source, edge[1], attr_dict=edge[2])
+				new_graph.remove_edge(edge[0], edge[1])
+
+			self._reassigned_source_graph = new_graph
+
+		return self._reassigned_source_graph
 
 
 

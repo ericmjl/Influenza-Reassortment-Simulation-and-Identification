@@ -34,6 +34,12 @@ class Simulator(object):
 
 		self.pathogens = []
 
+		# All the properties that need to be pre-computed are initialized to None here first. They are computed once.
+		self._reassortant_edges = None
+		self._relabeled_transmission_graph = None
+		self._full_transmission_graph = None
+		self._full_transmission_paths = None
+
 	def increment_timestep(self):
 		"""
 		This is the customizable part of the simulator. In the actual 
@@ -250,35 +256,54 @@ class Simulator(object):
 				reassortants.append(pathogen)
 
 		return reassortants
-
+	
+	@property
 	def reassortant_edges(self):
 		"""
-		This method will return the edges that connect to reassortants as a list.
+		This method will return the edges that connect to reassortants as a 
+		list.
 		"""
+		if self._reassortant_edges == None:
+			edges = []
 
-		pass
+			for reassortant in self.reassortants():
+				in_edges = \
+				self.relabeled_transmission_graph.in_edges(str(reassortant))
+				
+				for edge in in_edges:
+					edges.append(edge)
 
+			self._reassortant_edges = edges
+
+		return self._reassortant_edges
+
+
+	@property
 	def relabeled_transmission_graph(self):
 		"""
 		This method will return a relabeled_transmission_graph, with the nodes 
 		relabeled as strings rather than pathogen objects. 
 		"""
 
-		# Call on.transmission_graph to guarantee that the graph is 
-		# created. 
-		transmission_graph = self.transmission_graph()
+		if self._relabeled_transmission_graph == None:
 
-		# Create mapping from object to string
-		mapping = dict()
-		for node in transmission_graph.nodes():
-			mapping[node] = str(node)
+			# Call on.transmission_graph to guarantee that the graph is 
+			# created. 
+			transmission_graph = self.transmission_graph()
 
-		# Relabel the transmission graph in a copy of the transmission graph
-		relabeled = nx.relabel_nodes(\
-			transmission_graph, mapping)
+			# Create mapping from object to string
+			mapping = dict()
+			for node in transmission_graph.nodes():
+				mapping[node] = str(node)
 
-		return relabeled
+			# Relabel the transmission graph in a copy of the transmission graph
+			relabeled = nx.relabel_nodes(transmission_graph, mapping)
 
+			self._relabeled_transmission_graph = relabeled
+
+		return self._relabeled_transmission_graph
+
+	@property
 	def full_transmission_graph(self):
 		"""
 		This method will generate the full transmission graph from the 
@@ -286,30 +311,34 @@ class Simulator(object):
 		present in the graph. If the progeny node in the edge is a 
 		reassortant, then remove the edge. Otherwise, pass.
 		"""
+		if self._full_transmission_graph == None:
 
-		# Call on relabel_transmission_graph() to guarantee that the graph is 
-		# created. 
-		full_graph = self.relabeled_transmission_graph()
+			# Call on relabel_transmission_graph() to guarantee that the graph is 
+			# created. 
+			full_graph = self.relabeled_transmission_graph
 
-		# Identify the reassortants, and then recast them as a list of 
-		# strings, rather than a list of objects.
-		reassortants = self.reassortants()
-		reassortants = [str(item) for item in reassortants]
+			# Identify the reassortants, and then recast them as a list of 
+			# strings, rather than a list of objects.
+			reassortants = self.reassortants()
+			reassortants = [str(item) for item in reassortants]
 
-		for edge in full_graph.edges():
-			progeny = edge[1]
+			for edge in full_graph.edges():
+				progeny = edge[1]
 
-			# This is the criteria for removal of an edge. If the progeny node 
-			# is a reassortant, then the edge is not a full transmission edge. 
-			# Therefore, the progeny node should not be in reassortant for the 
-			# edge to be kept. Otherwise, the edge is removed.
-			if progeny in reassortants:
-				full_graph.remove_edge(edge[0], edge[1])
-			else:
-				pass
+				# This is the criteria for removal of an edge. If the progeny node 
+				# is a reassortant, then the edge is not a full transmission edge. 
+				# Therefore, the progeny node should not be in reassortant for the 
+				# edge to be kept. Otherwise, the edge is removed.
+				if progeny in reassortants:
+					full_graph.remove_edge(edge[0], edge[1])
+				else:
+					pass
 
-		return full_graph
+			self._full_transmission_graph = full_graph
 
+		return self._full_transmission_graph
+
+	@property
 	def full_transmission_paths(self):
 		"""
 		This method will update and return the set of full transmission paths 
@@ -328,11 +357,14 @@ class Simulator(object):
 				A list of disjoint sets, for which in each set, a path exists 
 				between each of the nodes.
 		"""
-		full_graph = self.full_transmission_graph()
+		if self._full_transmission_paths == None:
+			full_graph = self.full_transmission_graph
 
-		paths = identify_paths(full_graph)
+			paths = identify_paths(full_graph)
 
-		return paths
+			self._full_transmission_paths = paths
+
+		return self._full_transmission_paths
 
 	def full_transmission_path_exists(self, node1, node2):
 		"""
@@ -351,7 +383,7 @@ class Simulator(object):
 		"""
 
 		boolean = False
-		paths = self.full_transmission_paths()
+		paths = self.full_transmission_paths
 		for path in paths:
 			if node1 in path and node2 in path:
 				boolean = True
@@ -359,6 +391,7 @@ class Simulator(object):
 
 		return boolean
 
+	
 	def segment_transmission_graph(self, segment):
 		"""
 		This method will iterate over all of the edges in the relabeled 
@@ -374,7 +407,7 @@ class Simulator(object):
 		-	NETWORKX DIGRAPH: seg_graph
 				The segment transmission graph.
 		"""
-		seg_graph = self.relabeled_transmission_graph()
+		seg_graph = self.relabeled_transmission_graph
 
 		for edge in seg_graph.edges(data=True):
 			if segment not in edge[2]['segments']:
