@@ -167,7 +167,7 @@ class Pathogen(object):
 		new_pathogen.segments = deepcopy(self.segments)
 		new_pathogen.mutate()
 
-		print new_pathogen.parent
+		# print new_pathogen.parent
 		return new_pathogen
 
 	def mutate(self):

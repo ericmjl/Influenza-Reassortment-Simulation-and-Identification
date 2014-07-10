@@ -51,6 +51,7 @@ class Reconstructor(object):
 			self.sequences[segment] = []
 			self.graphs[segment] = nx.DiGraph()
 
+		# Property methods' corresponding attributes are stored here.
 		self._reassigned_source_graph = None
 		self._condensed_graph = None
 		self._pruned_condensed_graph = None
@@ -421,7 +422,7 @@ class Reconstructor(object):
 
 		edges = []
 
-		reassortants = self.reassortants(reconstruction_type=reconstruction_type)
+		reassortants = self.reassortants(reconstruction_type)
 
 		if reconstruction_type == "reconstruction":
 			graph = self.pruned_condensed_graph
@@ -479,6 +480,7 @@ class Reconstructor(object):
 				The graph where the sources are randomly reassigned.
 		"""
 		from copy import deepcopy
+
 		if self._reassigned_source_graph == None:
 
 			new_graph = deepcopy(self.pruned_condensed_graph)
@@ -506,13 +508,11 @@ class Reconstructor(object):
 						candidate_sources.append(candidate)
 
 				new_source = choice(candidate_sources)
-				# print new_source[0]
 				return new_source[0] # return the node label only
 
 			#################### BEGIN HELPER FUNCTIONS #######################
 
 			for edge in edges:
-				# print edge
 				sink_node = edge[1]
 				new_source = get_new_source(new_graph, sink_node)
 

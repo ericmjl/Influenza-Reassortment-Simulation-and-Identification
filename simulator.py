@@ -34,11 +34,14 @@ class Simulator(object):
 
 		self.pathogens = []
 
+		self.node_draw_positions = None
+
 		# All the properties that need to be pre-computed are initialized to None here first. They are computed once.
 		self._reassortant_edges = None
 		self._relabeled_transmission_graph = None
 		self._full_transmission_graph = None
 		self._full_transmission_paths = None
+		self._transmission_graph = None
 
 	def increment_timestep(self):
 		"""
@@ -123,6 +126,7 @@ class Simulator(object):
 		SeqIO.write(sequences, output_handle, 'fasta')
 		output_handle.close()
 
+	@property
 	def transmission_graph(self):
 		"""
 		This method creates the ground truth transmission graph in memory.
@@ -169,28 +173,31 @@ class Simulator(object):
 			return lev_dist
 		#################### END HELPER FUNCTIONS #############################
 
-		transmission_graph = nx.DiGraph()
+		#################### BEGIN MAIN LOGIC #################################
+		if self._transmission_graph == None:
+			transmission_graph = nx.DiGraph()
 
-		for pathogen in self.pathogens:
-			transmission_graph.add_node(pathogen, \
-				creation_time=pathogen.creation_time)
+			for pathogen in self.pathogens:
+				transmission_graph.add_node(pathogen, \
+					creation_time=pathogen.creation_time)
 
-			# Pass if the parent is empty - this means that the pathogen was a 
-			# seed pathogen 
-			if len(pathogen.parent) == 0:
-				pass
+				# Pass if the parent is empty - this means that the pathogen was a seed pathogen 
+				if len(pathogen.parent) == 0:
+					pass
 
-			# Otherwise, add each edge with the weight.
-			else:
-				for parent, segments in pathogen.parent.items():
-					if len(segments) != 0:
-						weight = edge_levenshtein_distance(parent, pathogen, \
-							segments) 
+				# Otherwise, add each edge with the weight.
+				else:
+					for parent, segments in pathogen.parent.items():
+						if len(segments) != 0:
+							weight = edge_levenshtein_distance(parent, pathogen, segments) 
 
-						transmission_graph.add_edge(parent, pathogen, \
-							weight=weight, segments=segments)
+							transmission_graph.add_edge(parent, pathogen, weight=weight, segments=segments)
 
-		return transmission_graph
+			self._transmission_graph = transmission_graph
+
+		return self._transmission_graph
+
+		#################### END MAIN LOGIC ###################################
 
 	def draw_transmission_graph(self, positions=False):
 		"""
@@ -206,7 +213,7 @@ class Simulator(object):
 		"""
 
 		# Step 1: Guarantee that transmission_graph is made.
-		transmission_graph = self.transmission_graph()
+		transmission_graph = self.relabeled_transmission_graph
 
 		# Step 2: Draw the graph according to the time-restricted layout or 
 		# circular layout.
@@ -214,10 +221,14 @@ class Simulator(object):
 			nx.draw_circular(transmission_graph)
 
 		if positions == True:
-			positions = dict()
-			for pathogen in self.pathogens:
-				positions[pathogen] = (pathogen.creation_time, randint(0, 20))
-			nx.draw(transmission_graph, pos=positions)
+			if self.node_draw_positions == None:
+				positions = dict()
+				for pathogen in self.pathogens:
+					positions[str(pathogen)] = (pathogen.creation_time, randint(0, 20))
+
+				self.node_draw_positions = positions
+
+			nx.draw(transmission_graph, pos=self.node_draw_positions)
 
 
 	def write_transmission_graph(self, outfile_name, folder_name=None):
@@ -233,7 +244,7 @@ class Simulator(object):
 				The folder in which the networkX gpickle files are going to be 
 				stored
 		"""
-		transmission_graph = self.transmission_graph()
+		transmission_graph = self.transmission_graph
 
 		if folder_name == None:
 			output_handle = open('%s.gpickle' % outfile_name, 'w+')
@@ -289,7 +300,7 @@ class Simulator(object):
 
 			# Call on.transmission_graph to guarantee that the graph is 
 			# created. 
-			transmission_graph = self.transmission_graph()
+			transmission_graph = self.transmission_graph
 
 			# Create mapping from object to string
 			mapping = dict()
@@ -391,7 +402,7 @@ class Simulator(object):
 
 		return boolean
 
-	
+
 	def segment_transmission_graph(self, segment):
 		"""
 		This method will iterate over all of the edges in the relabeled 
