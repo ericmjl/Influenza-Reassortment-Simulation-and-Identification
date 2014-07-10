@@ -41,7 +41,7 @@ def fraction_accurate_reassortants(simulator, reconstructor, reconstruction_type
 			overlaps += 1
 	
 	if len(simulation) == 0:
-		return "No reassortants present in simulation."
+		return 0
 	else:
 		return float(overlaps) / len(simulation)
 
@@ -75,7 +75,7 @@ def fraction_inaccurate_reassortants(simulator, reconstructor, reconstruction_ty
 			incorrect += 1
 	
 	if len(reconstruction) == 0:
-		return "No reassortants detected in reconstruction."
+		return 0
 	else:
 		return float(incorrect) / len(reconstruction)
 
@@ -112,8 +112,10 @@ def fraction_accurate_edges(simulator, reconstructor, reconstruction_type='recon
 	for edge in reconstruction:
 		if edge in simulation:
 			overlaps += 1
-	
-	return float(overlaps) / len(simulation)
+	if len(simulation) == 0:
+		return 0
+	else:
+		return float(overlaps) / len(simulation)
 
 def fraction_inaccurate_edges(simulator, reconstructor, reconstruction_type='reconstruction'):
 	"""
@@ -147,8 +149,11 @@ def fraction_inaccurate_edges(simulator, reconstructor, reconstruction_type='rec
 	for edge in reconstruction:
 		if edge not in simulation:
 			incorrect += 1
-	
-	return float(incorrect) / len(reconstruction)
+
+	if len(reconstruction) == 0:
+		return 0
+	else:
+		return float(incorrect) / len(reconstruction)
 
 def path_accuracy(simulator, reconstructor, reconstruction_type='reconstruction'):
 	"""
@@ -238,8 +243,11 @@ def fraction_accurate_reassortant_edges(simulator, reconstructor, reconstruction
 	for edge in reconstruction:
 		if edge in simulation:
 			overlaps += 1
-			
-	return float(overlaps)/len(simulation)
+
+	if len(simulation) == 0:
+		return 0
+	else:
+		return float(overlaps)/len(simulation)
 	
 def fraction_inaccurate_reassortant_edges(simulator, reconstructor, reconstruction_type='reconstruction'):
 	"""
@@ -272,5 +280,8 @@ def fraction_inaccurate_reassortant_edges(simulator, reconstructor, reconstructi
 	for edge in reconstruction:
 		if edge not in simulation:
 			incorrect += 1
-	
-	return float(incorrect) / len(reconstruction)
+
+	if len(reconstruction) == 0:
+		return 0
+	else:
+		return float(incorrect) / len(reconstruction)
