@@ -23,7 +23,7 @@ def fraction_accurate_reassortants(simulator, reconstructor, reconstruction_type
 			Currently, we allow:
 			-   'reconstruction': the best reconstruction possible.
 			-   'reassigned_source': a shuffled version of the reconstruction, 
-				in which the edges are shuffled.
+				in which the edges are shuffled by ignoring genetic similarity.
 			
 	OUTPUTS:
 	-   FLOAT: float(overlaps) / len(simulated)
@@ -56,10 +56,12 @@ def fraction_inaccurate_reassortants(simulator, reconstructor, reconstruction_ty
 			The simulator and reconstructor objects that hold the graphs.
 
 	-   STRING: reconstruction_type
-			A string specifying the type of reconstruction that we want to evaluate accuracy for.
+			A string specifying the type of reconstruction that we want to 
+			evaluate accuracy for.
 			Currently, we allow:
 			-   'reconstruction': the best reconstruction possible.
-			-   'reassigned_source': a shuffled version of the reconstruction, in which the edges are shuffled.
+			-   'reassigned_source': a shuffled version of the reconstruction, 
+				in which the edges are shuffled by ignoring genetic similarity.
 
 	OUTPUTS:
 	-   FLOAT: float(incorrect) / len(reconstructed)
@@ -91,14 +93,17 @@ def fraction_accurate_edges(simulator, reconstructor, reconstruction_type='recon
 			The simulator and reconstructor objects that hold the graphs.
 			
 	-   STRING: reconstruction_type
-			A string specifying the type of reconstruction that we want to evaluate accuracy for.
+			A string specifying the type of reconstruction that we want to 
+			evaluate accuracy for.
 			Currently, we allow:
 			-   'reconstruction': the best reconstruction possible.
-			-   'reassigned_source': a shuffled version of the reconstruction, in which the edges are shuffled.
+			-   'reassigned_source': a shuffled version of the reconstruction, 
+				in which the edges are shuffled by ignoring genetic similarity.
 			
 	OUTPUTS:
 	-   FLOAT: float(overlaps) / len(simulation)
-			The fraction of simulation edges that were correctly identified in the specified reconstruction.
+			The fraction of simulation edges that were correctly identified in 
+			the specified reconstruction.
 	"""
 	
 	simulation = simulator.relabeled_transmission_graph.edges(data=True)
@@ -120,17 +125,20 @@ def fraction_accurate_edges(simulator, reconstructor, reconstruction_type='recon
 def fraction_inaccurate_edges(simulator, reconstructor, reconstruction_type='reconstruction'):
 	"""
 	This method takes in a simulator and reconstructor object, and returns the
-	fraction of edges in the reconstruction that were not present in the simulation.
+	fraction of edges in the reconstruction that were not present in the 
+	simulation.
 	
 	INPUTS:
 	-   OBJECTS: simulator, reconstructor
 			The simulator and reconstructor objects that hold the graphs.
 			
 	-   STRING: reconstruction_type
-			A string specifying the type of reconstruction that we want to evaluate accuracy for.
+			A string specifying the type of reconstruction that we want to 
+			evaluate accuracy for.
 			Currently, we allow:
 			-   'reconstruction': the best reconstruction possible.
-			-   'reassigned_source': a shuffled version of the reconstruction, in which the edges are shuffled.
+			-   'reassigned_source': a shuffled version of the reconstruction, 
+				in which the edges are shuffled by ignoring genetic similarity.
 			
 	OUTPUTS:
 	-   FLOAT: float(overlaps) / len(simulation)
@@ -158,21 +166,26 @@ def fraction_inaccurate_edges(simulator, reconstructor, reconstruction_type='rec
 def path_accuracy(simulator, reconstructor, reconstruction_type='reconstruction'):
 	"""
 	This method takes in a simulator and reconstructor object, and returns the
-	fraction of edges in the reconstruction that were not present in the simulation.
+	fraction of edges in the reconstruction that represented a path in the 
+	original simulation. This becomes especially pertinent for the case where 
+	sampling occurs.
 	
 	INPUTS:
 	-   OBJECTS: simulator, reconstructor
 			The simulator and reconstructor objects that hold the graphs.
 			
 	-   STRING: reconstruction_type
-			A string specifying the type of reconstruction that we want to evaluate accuracy for.
+			A string specifying the type of reconstruction that we want to 
+			evaluate accuracy for.
 			Currently, we allow:
 			-   'reconstruction': the best reconstruction possible.
-			-   'reassigned_source': a shuffled version of the reconstruction, in which the edges are shuffled.
+			-   'reassigned_source': a shuffled version of the reconstruction, 
+				in which the edges are shuffled by ignoring genetic similarity.
 			
 	OUTPUTS:
-	-   FLOAT: float(overlaps) / len(simulation)
-			The fraction of simulation edges that were correctly identified in the specified reconstruction.
+	-   FLOAT: float(num_correct) / float(num_considered)
+			The fraction of edges in the reconstruction that represented an 
+			accurate path in the simulation.
 	"""
 	
 	simulation = simulator.relabeled_transmission_graph.edges(data=True)
@@ -193,15 +206,15 @@ def path_accuracy(simulator, reconstructor, reconstruction_type='reconstruction'
 			else:
 				num_correct_segments = 0
 				for segment in edge[2]['segments']:
-					if simulator.segment_transmission_path_exists(edge[0], edge[1], segment):
+					if simulator.segment_transmission_path_exists(edge[0], edge[1], int(segment)):
 						num_correct_segments += 1
 						
 				if num_correct_segments == len(edge[2]['segments']):
 					num_correct += 1
-		else:
+		if not reconstructor.is_full_transmission_edge(edge):
 			num_correct_segments = 0
 			for segment in edge[2]['segments']:
-				if simulator.segment_transmission_path_exists(edge[0], edge[1], segment):
+				if simulator.segment_transmission_path_exists(edge[0], edge[1], int(segment)):
 					num_correct_segments += 1
 					
 			if len(edge[2]['segments']) == num_correct_segments:
@@ -215,7 +228,8 @@ def path_accuracy(simulator, reconstructor, reconstruction_type='reconstruction'
 def fraction_accurate_reassortant_edges(simulator, reconstructor, reconstruction_type='reconstruction'):
 	"""
 	This method takes in the simulator and reconstructor objects, and returns
-	the fraction of ground truth reassortant edges that were found in the reconstruction.
+	the fraction of ground truth reassortant edges that were found in the 
+	reconstruction.
 	
 	INPUTS:
 	-   OBJECTS: simulator, reconstructor
@@ -227,7 +241,7 @@ def fraction_accurate_reassortant_edges(simulator, reconstructor, reconstruction
 			Currently, we allow:
 			-   'reconstruction': the best reconstruction possible.
 			-   'reassigned_source': a shuffled version of the reconstruction, 
-				in which the edges are shuffled.
+				in which the edges are shuffled by ignoring genetic similarity.
 			
 	OUTPUTS:
 	-   FLOAT: float(overlaps) / len(simulated)
@@ -264,7 +278,7 @@ def fraction_inaccurate_reassortant_edges(simulator, reconstructor, reconstructi
 			Currently, we allow:
 			-   'reconstruction': the best reconstruction possible.
 			-   'reassigned_source': a shuffled version of the reconstruction, 
-				in which the edges are shuffled.
+				in which the edges are shuffled by ignoring genetic similarity.
 			
 	OUTPUTS:
 	-   FLOAT: float(incorrect) / len(reconstruction)
@@ -285,3 +299,47 @@ def fraction_inaccurate_reassortant_edges(simulator, reconstructor, reconstructi
 		return 0
 	else:
 		return float(incorrect) / len(reconstruction)
+
+
+def reassortant_path_accuracy(simulator, reconstructor, reconstruction_type='reconstruction'):
+	"""
+	This method takes in a simulator and reconstructor object, and returns the
+	fraction of reassortant edges in the reconstruction that represented the 
+	segment transmission path in the simulation.
+	
+	INPUTS:
+	-   OBJECTS: simulator, reconstructor
+			The simulator and reconstructor objects that hold the graphs.
+			
+	-   STRING: reconstruction_type
+			A string specifying the type of reconstruction that we want to 
+			evaluate accuracy for.
+			Currently, we allow:
+			-   'reconstruction': the best reconstruction possible.
+			-   'reassigned_source': a shuffled version of the reconstruction, 
+				in which the edges are shuffled by ignoring genetic similarity.
+			
+	OUTPUTS:
+	-   FLOAT: float(num_correct) / float(num_considered)
+			The fraction of segment transmission edges in the reconstruction 
+			that represented an accurate path in the simulation.
+	"""
+
+	simulation = simulator.relabeled_transmission_graph.edges(data=True)
+
+	reconstruction = reconstructor.reassortant_edges(reconstruction_type)
+
+	num_considered = 0
+	num_correct = 0
+
+	for edge in reconstruction:
+		for segment in edge[2]['segments']:
+			num_considered += 1
+			if simulator.segment_transmission_path_exists(edge[0], edge[1], int(segment)):
+				num_correct += 1
+
+	if len(reconstruction) == 0:
+		return 0
+
+	else:
+		return float(num_correct) / float(num_considered)

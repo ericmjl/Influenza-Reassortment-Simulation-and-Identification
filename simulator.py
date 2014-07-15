@@ -9,6 +9,7 @@ from Bio import SeqIO
 from Bio.Alphabet import IUPAC
 from random import randint
 from Levenshtein import distance
+from copy import deepcopy
 
 import networkx as nx
 
@@ -41,6 +42,7 @@ class Simulator(object):
 		self._relabeled_transmission_graph = None
 		self._full_transmission_graph = None
 		self._full_transmission_paths = None
+		self._transmission_paths = None
 		self._transmission_graph = None
 
 	def increment_timestep(self):
@@ -418,7 +420,7 @@ class Simulator(object):
 		-	NETWORKX DIGRAPH: seg_graph
 				The segment transmission graph.
 		"""
-		seg_graph = self.relabeled_transmission_graph
+		seg_graph = deepcopy(self.relabeled_transmission_graph)
 
 		for edge in seg_graph.edges(data=True):
 			if segment not in edge[2]['segments']:
@@ -476,42 +478,6 @@ class Simulator(object):
 				break
 
 		return boolean
-
-
-
-
-	# def identify_segment_paths(self):
-	# 	"""
-	# 	This method will identify the transmission paths for each segment. 
-
-	# 	2 July 2014: This part of the code still has to be changed.
-	# 	"""
-
-	# 	segment_paths = dict()
-
-	# 	# Step 1: Initialize the dictionary with such that the keys are the 
-	# 	# segment numbers of the pathogens being considered.
-	# 	segment_numbers = set()
-	# 	for pathogen in self.transmission_graph.nodes():
-	# 		for segment in pathogen.segments:
-	# 			segment_numbers.add(segment.segment_number)
-
-	# 	for number in segment_numbers:
-	# 		segment_paths[number] = []
-
-	# 	# Step 2: For each segment, add nodes to the graph.
-	# 	for node in self.relabeled_transmission_graph.nodes():
-	# 		for number in segment_numbers:
-	# 			segment_numbers[number].append(set([node]))
-
-	# 	# Step 3: Union-Find all of the paths.
-	# 	for edge in self.relabeled_transmission_graph.edges(data=True):
-	# 		# path1 = 
-	# 		pass
-
-
-
-
 
 #################### BEGIN HELPER METHODS FOR PATH FINDING ####################
 def identify_paths(graph):

@@ -7,6 +7,9 @@ from Levenshtein import distance
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from copy import copy
+from numpy.random import binomial
+from random import sample
+from copy import deepcopy
 
 import networkx as nx
 
@@ -15,7 +18,7 @@ class Reconstructor(object):
 	The Reconstructor class holds the composable methods for reconstructing 
 	networks from genetic information.
 	"""
-	def __init__(self, segments):
+	def __init__(self, segments, sampling=False):
 		"""
 		The Reconstructor class allows us the flexibility to test different 
 		reconstruction algorithms.
@@ -25,6 +28,13 @@ class Reconstructor(object):
 				A list of segment numbers. Currently, I assume that each 
 				segment has an integer number associated with it. Therefore, 
 				the elements in this list should be integer numbers.
+
+		-	BOOLEAN: sampling
+				A boolean to tell us whether to do sampling from simulated 
+				sequences or not. 
+
+				-	TRUE: sample only 1/2 of the isolates in reconstruction.
+				-	FALSE: use all of the isolates in reconstruction.
 
 		ATTRIBUTES:
 		NOTE: I am currently debating whether these attributes are actually 
@@ -51,6 +61,8 @@ class Reconstructor(object):
 			self.sequences[segment] = []
 			self.graphs[segment] = nx.DiGraph()
 
+		self.sampling = sampling
+
 		# Property methods' corresponding attributes are stored here.
 		self._reassigned_source_graph = None
 		self._condensed_graph = None
@@ -74,12 +86,51 @@ class Reconstructor(object):
 				The position of the segment number in the id.
 		"""
 
+		#################### BEGIN HELPER FUNCTIONS ###########################
+
+		def get_isolate_ids(sequences):
+			"""
+			This method will get the ids from the FASTA files.
+			"""
+			ids = set()
+
+			for sequence in sequences:
+				ids.add(sequence.id.split(splitchar)[0])
+
+			return ids
+
+		def sample_isolates(ids):
+			"""
+			This method will sample approximately half of the isolates at 
+			random.
+			"""
+			n = len(ids)
+			p = 0.5
+
+			num_sampled = binomial(n, p)
+
+			sampled_isolates = sample(ids, num_sampled)
+
+			return sampled_isolates
+
+		#################### END HELPER FUNCTIONS #############################
+
 		sequences = [record for record in SeqIO.parse(fasta_file, 'fasta')]
-		
+
+		if self.sampling == True:
+			ids = get_isolate_ids(sequences)
+			sampled_isolates = sample_isolates(ids)
+
+		if self.sampling == False:
+			sampled_isolates = get_isolate_ids(sequences)
+
 		for sequence in sequences:
 			segnum = int(sequence.id.split(splitchar)[pos_segment_num])
 
-			self.sequences[segnum].append(sequence)
+			seqid = sequence.id.split(splitchar)[0]
+
+			if seqid in sampled_isolates:
+				self.sequences[segnum].append(sequence)
 
 	def add_nodes_with_data(self, id_attributes=None, splitchar='|'):
 		"""
@@ -284,7 +335,8 @@ class Reconstructor(object):
 		"""
 		This method prunes the condensed graph such that if a node has a "full 
 		transmission" edge into it, we will remove edges that have fewer than 
-		full transmissions going into it. 
+		full transmissions going into it. This is the graph that will be used 
+		for assessing accuracy under no sampling constraints.
 
 		To keep the code logic readable and compact, two helper functions have 
 		been defined.
@@ -321,7 +373,7 @@ class Reconstructor(object):
 		#################### BEGIN IMPORTANT LOGIC ############################
 		
 		if self._pruned_condensed_graph == None:
-			pruned = self.condensed_graph
+			pruned = deepcopy(self.condensed_graph)
 
 			for node in pruned.nodes(data=True):
 				in_edges = pruned.in_edges(node[0], data=True)
@@ -430,7 +482,7 @@ class Reconstructor(object):
 			graph = self.reassigned_source_graph
 
 		for node in reassortants:
-			in_edges = graph.in_edges(node)
+			in_edges = graph.in_edges(node, data=True)
 			edges.extend(in_edges)
 
 		return edges
@@ -438,10 +490,10 @@ class Reconstructor(object):
 	@property
 	def full_transmission_graph(self):
 		"""
-		This method will return only the full transmissions in the 
+		This method will return only the full transmissions in a copy of the  
 		condensed graph.
 		"""
-		full_graph = self.pruned_condensed_graph
+		full_graph = deepcopy(self.pruned_condensed_graph)
 		for edge in full_graph.edges(data=True):
 			if set(edge[2]['segments']) != set(self.segments):
 				full_graph.remove_edge(edge[0], edge[1])
@@ -455,7 +507,7 @@ class Reconstructor(object):
 		do not contain the specified segment.
 		"""
 
-		seg_graph = self.pruned_condensed_graph
+		seg_graph = deepcopy(self.pruned_condensed_graph)
 
 		for edge in seg_graph.edges(data=True):
 			if segment not in edge[2]['segments']:
@@ -466,7 +518,7 @@ class Reconstructor(object):
 	@property
 	def reassigned_source_graph(self):
 		"""
-		This method takes in a graph, in which the edges are permuted. The 
+		This method takes in a graph, for which the edges are permuted. The 
 		specific implementation here is that we iterate over all the edges, 
 		and randomly select another source node that occurs before the sink 
 		node.
@@ -479,14 +531,13 @@ class Reconstructor(object):
 		-	NETWORKX GRAPH: reassigned
 				The graph where the sources are randomly reassigned.
 		"""
-		from copy import deepcopy
 
 		if self._reassigned_source_graph == None:
 
-			new_graph = deepcopy(self.pruned_condensed_graph)
+			new_graph = nx.DiGraph()
 
-			edges = new_graph.edges(data=True)
-			nodes = new_graph.nodes(data=True)
+			edges = self.pruned_condensed_graph.edges(data=True)
+			nodes = self.pruned_condensed_graph.nodes(data=True)
 
 			#################### BEGIN HELPER FUNCTIONS #######################
 			def get_new_source(graph, node):
@@ -510,14 +561,19 @@ class Reconstructor(object):
 				new_source = choice(candidate_sources)
 				return new_source[0] # return the node label only
 
-			#################### BEGIN HELPER FUNCTIONS #######################
+			#################### END HELPER FUNCTIONS #########################
 
 			for edge in edges:
 				sink_node = edge[1]
-				new_source = get_new_source(new_graph, sink_node)
+
+				while True:
+					new_source = get_new_source(self.pruned_condensed_graph, sink_node)
+					new_edge = (new_source, sink_node)
+
+					if new_edge not in new_graph.edges():
+						break
 
 				new_graph.add_edge(new_source, edge[1], attr_dict=edge[2])
-				new_graph.remove_edge(edge[0], edge[1])
 
 			self._reassigned_source_graph = new_graph
 
