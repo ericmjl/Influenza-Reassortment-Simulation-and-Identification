@@ -188,7 +188,9 @@ def path_accuracy(simulator, reconstructor, reconstruction_type='reconstruction'
 			accurate path in the simulation.
 	"""
 	
-	simulation = simulator.relabeled_transmission_graph.edges(data=True)
+	# simulation = simulator.relabeled_transmission_graph.edges(data=True)
+	# simulation_full = simulator.full_transmission_graph.edges()
+	# simulation_reas = simulator.reassortant_edges
 	
 	if reconstruction_type == 'reconstruction':
 		reconstruction = reconstructor.pruned_condensed_graph.edges(data=True)
@@ -223,7 +225,7 @@ def path_accuracy(simulator, reconstructor, reconstruction_type='reconstruction'
 			else:
 				pass
 			
-	return float(num_correct) / float(num_considered)
+	return float(num_correct) / float(len(reconstruction))
 
 def fraction_accurate_reassortant_edges(simulator, reconstructor, reconstruction_type='reconstruction'):
 	"""

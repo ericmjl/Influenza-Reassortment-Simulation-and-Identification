@@ -215,7 +215,7 @@ class Simulator(object):
 		"""
 
 		# Step 1: Guarantee that transmission_graph is made.
-		transmission_graph = self.relabeled_transmission_graph
+		transmission_graph = deepcopy(self.relabeled_transmission_graph)
 
 		# Step 2: Draw the graph according to the time-restricted layout or 
 		# circular layout.
@@ -246,7 +246,7 @@ class Simulator(object):
 				The folder in which the networkX gpickle files are going to be 
 				stored
 		"""
-		transmission_graph = self.transmission_graph
+		transmission_graph = deepcopy(self.transmission_graph)
 
 		if folder_name == None:
 			output_handle = open('%s.gpickle' % outfile_name, 'w+')
@@ -281,10 +281,11 @@ class Simulator(object):
 
 			for reassortant in self.reassortants():
 				in_edges = \
-				self.relabeled_transmission_graph.in_edges(str(reassortant))
+				self.relabeled_transmission_graph.in_edges(str(reassortant), data=True)
 				
-				for edge in in_edges:
-					edges.append(edge)
+				edges.extend(edges)
+				# for edge in in_edges:
+				# 	edges.append(edge)
 
 			self._reassortant_edges = edges
 
@@ -302,7 +303,7 @@ class Simulator(object):
 
 			# Call on.transmission_graph to guarantee that the graph is 
 			# created. 
-			transmission_graph = self.transmission_graph
+			transmission_graph = deepcopy(self.transmission_graph)
 
 			# Create mapping from object to string
 			mapping = dict()
@@ -328,7 +329,7 @@ class Simulator(object):
 
 			# Call on relabel_transmission_graph() to guarantee that the graph is 
 			# created. 
-			full_graph = self.relabeled_transmission_graph
+			full_graph = deepcopy(self.relabeled_transmission_graph)
 
 			# Identify the reassortants, and then recast them as a list of 
 			# strings, rather than a list of objects.
