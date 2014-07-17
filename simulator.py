@@ -283,7 +283,7 @@ class Simulator(object):
 				in_edges = \
 				self.relabeled_transmission_graph.in_edges(str(reassortant), data=True)
 				
-				edges.extend(edges)
+				edges.extend(in_edges)
 				# for edge in in_edges:
 				# 	edges.append(edge)
 

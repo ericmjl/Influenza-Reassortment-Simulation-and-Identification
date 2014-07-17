@@ -254,7 +254,7 @@ def fraction_accurate_reassortant_edges(simulator, reconstructor, reconstruction
 	
 	simulation = simulator.reassortant_edges
 	reconstruction = reconstructor.reassortant_edges(reconstruction_type)
-	
+
 	overlaps = 0
 	for edge in reconstruction:
 		if edge in simulation:
